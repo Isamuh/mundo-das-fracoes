@@ -379,7 +379,9 @@ button:focus-visible {
   cursor: pointer;
 }
 .world {
-  height: 300px;
+  width: 100%;
+  aspect-ratio: 1144/300;
+  min-height: 150px;
   position: relative;
   overflow: hidden;
   border-radius: 23px;
@@ -396,8 +398,8 @@ button:focus-visible {
 .goal-badge {
   position: absolute;
   z-index: 2;
-  top: 18px;
-  left: 23px;
+  top: 6%;
+  left: 2%;
   padding: 8px 13px;
   border-radius: 13px;
   background: #fffdf7e8;
@@ -839,7 +841,6 @@ button:focus-visible {
     font-size: 18px;
   }
   .world {
-    height: 220px;
     --dino-offset: 55px;
     --tag-offset: 20px;
     --tag-gap: 14px;
@@ -878,15 +879,22 @@ button:focus-visible {
   .dino {
     width: 54px;
   }
-  .measure {
-    font-size: 11px;
+  .world .goal-badge {
+    padding: 5px 8px;
+    border-radius: 9px;
+    font-size: 8px;
+  }
+  .world .goal-badge strong {
+    font-size: 14px;
+    margin-top: 2px;
+  }
+  .world .measure {
+    font-size: 10px;
+    padding: 4px 9px;
+    bottom: 6%;
   }
   .fraction {
     min-width: 18px;
-  }
-  .world .goal-badge {
-    transform: scale(0.85);
-    transform-origin: left top;
   }
   .lesson-card {
     padding: 30px 22px;
@@ -897,7 +905,6 @@ button:focus-visible {
 }
 @media (max-width: 420px) {
   .world {
-    height: 180px;
     --dino-offset: 42px;
     --tag-offset: 14px;
     --tag-gap: 10px;
@@ -908,6 +915,18 @@ button:focus-visible {
   .character-tag {
     font-size: 9px;
     padding: 4px 7px;
+  }
+  .world .goal-badge {
+    padding: 4px 6px;
+    font-size: 7px;
+  }
+  .world .goal-badge strong {
+    font-size: 12px;
+  }
+  .world .measure {
+    font-size: 9px;
+    padding: 3px 7px;
+    bottom: 5%;
   }
   .math-card {
     width: 52px;
