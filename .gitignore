@@ -29,3 +29,6 @@ coverage/
 
 # Misc
 *.local
+
+# Development notes
+.todo

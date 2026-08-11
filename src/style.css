@@ -384,6 +384,9 @@ button:focus-visible {
   overflow: hidden;
   border-radius: 23px;
   box-shadow: 0 14px 30px #40789b2b;
+  --dino-offset: 78px;
+  --tag-offset: 30px;
+  --tag-gap: 20px;
 }
 .world-bg {
   width: 100%;
@@ -501,6 +504,7 @@ button:focus-visible {
   border: 2px dashed #b6d6e6;
   border-radius: 12px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   padding: 7px;
   gap: 8px;
@@ -532,6 +536,7 @@ button:focus-visible {
 }
 .card-list {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .math-card {
@@ -835,6 +840,9 @@ button:focus-visible {
   }
   .world {
     height: 220px;
+    --dino-offset: 55px;
+    --tag-offset: 20px;
+    --tag-gap: 14px;
   }
   .workbench {
     grid-template-columns: 1fr;
@@ -869,19 +877,12 @@ button:focus-visible {
   }
   .dino {
     width: 54px;
-    bottom: 44px;
   }
   .measure {
     font-size: 11px;
   }
   .fraction {
     min-width: 18px;
-  }
-  .bridge {
-    bottom: 84px;
-  }
-  .character-tag {
-    bottom: 100px;
   }
   .world .goal-badge {
     transform: scale(0.85);
@@ -892,6 +893,39 @@ button:focus-visible {
   }
   .lesson-card h1 {
     font-size: 35px;
+  }
+}
+@media (max-width: 420px) {
+  .world {
+    height: 180px;
+    --dino-offset: 42px;
+    --tag-offset: 14px;
+    --tag-gap: 10px;
+  }
+  .dino {
+    width: 42px;
+  }
+  .character-tag {
+    font-size: 9px;
+    padding: 4px 7px;
+  }
+  .math-card {
+    width: 52px;
+    height: 58px;
+    font-size: 22px;
+  }
+  .mini-card {
+    height: 42px;
+    min-width: 40px;
+    font-size: 17px;
+  }
+  .workbench {
+    padding: 14px;
+    gap: 10px;
+  }
+  .hero h1,
+  .simple-page h1 {
+    font-size: 38px;
   }
 }
 .star-meter {
@@ -1213,7 +1247,7 @@ button:focus-visible {
   right: 16.8%;
 }
 .world .dino {
-  bottom: 96px;
+  bottom: 32%;
 }
 .world .bridge {
   left: 37.5%;
@@ -1224,7 +1258,7 @@ button:focus-visible {
   bottom: 66px;
 }
 .world .character-tag {
-  bottom: 204px;
+  bottom: 68%;
 }
 .whole-number {
   font-weight: 700;
@@ -1258,18 +1292,18 @@ button:focus-visible {
 }
 .world .tag-tico {
   left: 16.8%;
-  transform: translateX(30px);
+  transform: translateX(var(--tag-offset));
 }
 .world .tag-tico.walking {
-  left: calc(62.5% - 78px);
+  left: calc(62.5% - var(--dino-offset));
   transition: left 1.8s ease-in-out;
   z-index: 4;
 }
 .world .tag-luma {
-  right: calc(16.8% + 20px);
+  right: calc(16.8% + var(--tag-gap));
 }
 .world .bridge {
-  bottom: 105px;
+  bottom: 35%;
 }
 .lesson-visual.thirds .half {
   width: 75px;
@@ -1284,7 +1318,7 @@ button:focus-visible {
   border-radius: 2px 9px 9px 2px;
 }
 .world .tico.walking {
-  left: calc(62.5% - 78px);
+  left: calc(62.5% - var(--dino-offset));
   transition: left 1.8s ease-in-out;
   z-index: 4;
 }
@@ -1612,7 +1646,7 @@ button:focus-visible {
   background: #315c73;
 }
 .world .measure {
-  bottom: 36px;
+  bottom: 12%;
 }
 .level-page .operation-guide {
   display: none;
