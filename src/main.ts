@@ -1,6 +1,10 @@
 import "./style.css";
 import { Fraction } from "./math/Fraction";
-
+import { LevelLoader } from "./game/LevelLoader";
+import { LevelAdapter } from "./game/LevelAdapter";
+import { resolveBridgeGeometry } from "./game/SceneGeometry";
+import { homeScene } from "./data/homeScene";
+import type { Level, RiverPosition, BridgePosition, DinoPosition } from "./data/types";
 type Settings = {
   reducedMotion: boolean;
   highContrast: boolean;
@@ -40,6 +44,27 @@ const orderedDeckKeys = (keys: string[]): string[] => {
   return deckOrder;
 };
 const app = document.querySelector<HTMLDivElement>("#app")!;
+
+// Estado do nível carregado
+let currentLevelData: Level | null = null;
+
+let sceneAssets: {
+  backgroundUrl: string;
+  cliffLeftUrl: string;
+  cliffRightUrl: string;
+  riverUrls: string[];
+  riverPosition: RiverPosition;
+  bridgePosition: BridgePosition;
+  gorgeLeft: number;
+  gorgeRight: number;
+  cliffLeftOffsetLeft: number;
+  cliffRightOffsetRight: number;
+  dinos: { tico: DinoPosition; luma: DinoPosition };
+  cliffLeftOffsetTop: number;
+  cliffRightOffsetTop: number;
+  riverOffsetTop: number;
+  bridgeHeight: number;
+} | null = null;
 const backgroundMusic = new Audio("/assets/audio/heavenly-loop.ogg");
 backgroundMusic.loop = true;
 backgroundMusic.volume = settings.volume / 100;
@@ -67,17 +92,22 @@ const fraction = (text: string) => {
     ? `<span class="whole-number">${a}</span>`
     : `<span class="fraction"><b>${a}</b><i class="fraction-line"></i><b>${b}</b><em class="fraction-bar"><u style="width:${Math.min(100, (Number(a) / Number(b)) * 100)}%"></u></em></span>`;
 };
-const cardFraction = (id: string) =>
-  id === "threeQuarter"
+const cardFraction = (id: string) => {
+  const value = currentLevelData?.deck.cards.find((card) => card.id === id)?.value;
+  if (value?.includes("/")) {
+    const [numerator, denominator] = value.split("/");
+    return new Fraction(Number(numerator), Number(denominator));
+  }
+  return id === "threeQuarter"
     ? new Fraction(3, 4)
-    : id.startsWith("third")
-      ? new Fraction(1, 3)
-      : id.startsWith("quarter") || id === "quarter"
-        ? new Fraction(1, 4)
-        : id === "fifth"
-          ? new Fraction(1, 5)
-          : new Fraction(1, 2);
-const isOperator = (id: string) => id.startsWith("plus") || id === "minus";
+    : id.startsWith("third") ? new Fraction(1, 3)
+    : id.startsWith("quarter") || id === "quarter" ? new Fraction(1, 4)
+    : id === "fifth" ? new Fraction(1, 5)
+    : new Fraction(1, 2);
+};
+const isOperator = (id: string) =>
+  currentLevelData?.deck.cards.find((card) => card.id === id)?.type === "operator" ||
+  id.startsWith("plus") || id === "minus";
 type ExpressionState = {
   valid: boolean;
   complete: boolean;
@@ -185,9 +215,45 @@ function speakGuide(key: string): void {
   say(bar?.classList.contains("active") ? entry.after : entry.before);
 }
 
+/**
+ * Carrega um nível a partir do ID e prepara seus assets
+ */
+async function loadAndPrepareLevel(levelId: string): Promise<void> {
+  try {
+    currentLevelData = await LevelLoader.loadLevel(levelId);
+    const layout = LevelAdapter.getSceneLayout(currentLevelData);
+    const riverPos = LevelAdapter.getRiverPosition(currentLevelData);
+    const riverOffset = LevelAdapter.getRiverOffsetTop(currentLevelData);
+    const bridgePosition = LevelAdapter.getBridgePosition(currentLevelData);
+    const bHeight = LevelAdapter.getBridgeHeight(currentLevelData);
+    
+    sceneAssets = {
+      backgroundUrl: layout.backgroundUrl,
+      cliffLeftUrl: layout.cliffLeftUrl,
+      cliffRightUrl: layout.cliffRightUrl,
+      riverUrls: layout.riverUrls,
+      riverPosition: riverPos,
+      bridgePosition,
+      gorgeLeft: layout.gorgeLeft,
+      gorgeRight: layout.gorgeRight,
+      cliffLeftOffsetLeft: layout.cliffLeftOffsetLeft,
+      cliffRightOffsetRight: layout.cliffRightOffsetRight,
+      dinos: layout.dinos,
+      cliffLeftOffsetTop: layout.cliffLeftOffsetTop,
+      cliffRightOffsetTop: layout.cliffRightOffsetTop,
+      riverOffsetTop: riverOffset,
+      bridgeHeight: bHeight,
+    };
+  } catch (error) {
+    console.error(`Failed to load level ${levelId}:`, error);
+    say("Erro ao carregar a fase.");
+  }
+}
 function home(): void {
+  const homeSceneStyle = `--home-bg:url('${homeScene.backgroundUrl}');--home-left-x:${homeScene.cliffs.left.x}%;--home-left-width:${homeScene.cliffs.left.width}%;--home-left-bottom:${homeScene.cliffs.left.bottom ?? 0}px;--home-left-scale:${homeScene.cliffs.left.scale ?? 1};--home-right-x:${homeScene.cliffs.right.x}%;--home-right-width:${homeScene.cliffs.right.width}%;--home-right-bottom:${homeScene.cliffs.right.bottom ?? 0}px;--home-right-scale:${homeScene.cliffs.right.scale ?? 1};--home-bridge-left:${homeScene.bridge.left}%;--home-bridge-right:${homeScene.bridge.right}%;--home-bridge-bottom:${homeScene.bridge.bottom}px;--home-bridge-height:${homeScene.bridge.height}px;--home-bridge-scale:${homeScene.bridge.scale ?? 1};--home-tico-left:${homeScene.dinos.tico.left}%;--home-tico-bottom:${homeScene.dinos.tico.bottom}px;--home-tico-width:${homeScene.dinos.tico.width}px;--home-tico-scale:${homeScene.dinos.tico.scale ?? 1};--home-luma-right:${homeScene.dinos.luma.right}%;--home-luma-bottom:${homeScene.dinos.luma.bottom}px;--home-luma-width:${homeScene.dinos.luma.width}px;--home-luma-scale:${homeScene.dinos.luma.scale ?? 1}`;
+  document.documentElement.style.cssText += `;${homeSceneStyle}`;
   shell(
-    `${header()}<main class="hero"><section class="hero-copy"><p class="eyebrow">UMA AVENTURA PARA DESCOBRIR</p><h1>Construa pontes.<br/><em>Conecte ideias.</em></h1><p class="lead">Frações viram peças de um mundo encantado. Experimente, construa e descubra matemática no seu ritmo.</p><div class="hero-actions"><button class="button primary" data-go="operations-guide">Começar aventura <span>→</span></button><button class="button ghost" data-go="about">Conheça o projeto</button></div><div class="feature-row"><span>◉ Sem tempo limite</span><span>♬ Ritmo tranquilo</span><span>◌ Feito para explorar</span></div></section><section class="hero-art"><div class="sun"></div><div class="bridge-preview"><div></div><div></div><div></div></div><img class="red-dino hero-dino" src="/assets/dinos/dino_red_idle.png" alt="Dinossauro vermelho"/><img class="blue-dino hero-friend" src="/assets/dinos/dino_blue_idle.png" alt="Dinossauro azul"/><div class="chapter-card"><span>PRIMEIRO DESAFIO</span><strong>Partes de um inteiro</strong><small>Aprenda com duas metades</small></div></section></main><nav class="bottom-nav"><button data-go="accessibility">♿ <span>Acessibilidade</span></button><button data-go="settings">⚙ <span>Configurações</span></button><button data-go="about">ⓘ <span>Sobre o projeto</span></button><button data-go="credits">✦ <span>Créditos</span></button></nav>`,
+    `${header()}<main class="hero"><section class="hero-copy"><p class="eyebrow">UMA AVENTURA PARA DESCOBRIR</p><h1>Construa pontes.<br/><em>Conecte ideias.</em></h1><p class="lead">Frações viram peças de um mundo encantado. Experimente, construa e descubra matemática no seu ritmo.</p><div class="hero-actions"><button class="button primary" data-go="operations-guide">Começar aventura <span>→</span></button><button class="button ghost" data-go="about">Conheça o projeto</button></div><div class="feature-row"><span>◉ Sem tempo limite</span><span>♬ Ritmo tranquilo</span><span>◌ Feito para explorar</span></div></section><section class="hero-art"><div class="sun"></div><img class="hero-cliff hero-cliff-left" src="/assets/background/cliff_left.png" alt="" aria-hidden="true"/><img class="hero-cliff hero-cliff-right" src="/assets/background/cliff_right.png" alt="" aria-hidden="true"/><div class="bridge-preview"><div></div><div></div><div></div></div><img class="red-dino hero-dino" src="/assets/dinos/dino_red_idle.png" alt="Dinossauro vermelho"/><img class="blue-dino hero-friend" src="/assets/dinos/dino_blue_idle.png" alt="Dinossauro azul"/><div class="chapter-card"><span>PRIMEIRO DESAFIO</span><strong>Partes de um inteiro</strong><small>Aprenda com duas metades</small></div></section></main><nav class="bottom-nav"><button data-go="accessibility">♿ <span>Acessibilidade</span></button><button data-go="settings">⚙ <span>Configurações</span></button><button data-go="about">ⓘ <span>Sobre o projeto</span></button><button data-go="credits">✦ <span>Créditos</span></button></nav>`,
   );
 }
 function operationsGuide(): void {
@@ -210,20 +276,21 @@ function lessonIntro(): void {
     `${header("map")}<main class="lesson-intro"><section class="lesson-card"><div class="lesson-icon">½</div><p class="eyebrow">ANTES DE COMEÇAR</p><h1>O que é uma metade?</h1><p>Imagine uma ponte inteira dividida em <strong>duas partes iguais</strong>. Cada uma dessas partes é uma metade: <b>${fraction("1/2")}</b>.</p><div class="lesson-visual"><span class="half filled"></span><span class="half filled"></span><strong>1 inteiro</strong></div><div class="lesson-steps"><span><b>1</b> Escolha peças</span><span><b>2</b> Monte a expressão</span><span><b>3</b> Teste a ponte</span></div><button class="button primary" data-action="start-level">Entendi, vamos jogar <span>→</span></button></section></main>`,
   );
 }
-function startLevel(): void {
+async function startLevel(): Promise<void> {
+  await loadAndPrepareLevel("level-1-1");
   currentLevel = 1;
   cards = [];
   deckOrder = [];
   renderLevel();
-  say(
-    "Fase um: Duas metades. Use as cartas para construir uma ponte que complete um inteiro.",
-  );
+  const instruction = currentLevelData ? LevelAdapter.getInstruction(currentLevelData) : "Fase um: Duas metades. Use as cartas para construir uma ponte que complete um inteiro.";
+  say(instruction);
 }
-function startLevelTwo(): void {
+async function startLevelTwo(): Promise<void> {
   if (localStorage.getItem("mdf-level-1-complete") !== "true") {
     map();
     return;
   }
+  await loadAndPrepareLevel("level-1-3");
   currentLevel = 2;
   cards = [];
   deckOrder = [];
@@ -232,17 +299,18 @@ function startLevelTwo(): void {
     "Fase dois: Três terços. Use três partes iguais para completar um inteiro.",
   );
 }
-function startLevelThree(): void {
+async function startLevelThree(): Promise<void> {
   if (localStorage.getItem("mdf-level-2-complete") !== "true") {
     map();
     return;
   }
+  await loadAndPrepareLevel("level-1-4");
   currentLevel = 3;
   cards = [];
   deckOrder = [];
   renderLevel();
   say(
-    "Fase três: Juntar e retirar. Use mais e menos para completar um inteiro.",
+    "Fase três: Use + e − para formar exatamente um inteiro com partes diferentes.",
   );
 }
 function renderLevel(
@@ -250,42 +318,120 @@ function renderLevel(
 ): void {
   const levelTwo = currentLevel === 2;
   const levelThree = currentLevel === 3;
-  const values: Record<string, string> = levelThree
-    ? {
-        halfA: fraction("1/2"),
-        plusA: "+",
-        threeQuarter: fraction("3/4"),
-        minus: "−",
-        quarterA: fraction("1/4"),
-        third: fraction("1/3"),
-      }
-    : levelTwo
-      ? {
-          thirdA: fraction("1/3"),
-          plusA: "+",
-          thirdB: fraction("1/3"),
-          plusB: "+",
-          thirdC: fraction("1/3"),
-          minus: "−",
-          half: fraction("1/2"),
-          quarter: fraction("1/4"),
-        }
-      : {
-          halfA: fraction("1/2"),
-          plus: "+",
-          halfB: fraction("1/2"),
-          minus: "−",
-          third: fraction("1/3"),
-          quarterA: fraction("1/4"),
-          quarterB: fraction("1/4"),
-          fifth: fraction("1/5"),
-        };
+  
+  // Calcular expressão primeiro
   const expression = evaluateExpression(cards);
   const total = expression.valid ? expression.result : new Fraction(0, 1);
   const numericTotal = Math.max(0, total.toNumber());
-  const coverage = Math.min(numericTotal, 1) * 100;
-  const bridgeWidth = Math.max(1, numericTotal * 25);
-  const fillWidth = expression.valid ? 100 : coverage;
+  const targetText = currentLevelData?.objective ?? "1/1";
+  const [targetNumerator, targetDenominator = "1"] = targetText.split("/");
+  const target = new Fraction(Number(targetNumerator), Number(targetDenominator));
+  const targetValue = Math.max(Number.EPSILON, target.toNumber());
+  // Mantém o excesso visível: 1/2 + 3/4 ocupa 125% do vão-alvo.
+  const coverage = Math.min(Math.max(0, numericTotal / targetValue) * 100, 250);
+  const cliffLeftOffsetLeft = sceneAssets?.cliffLeftOffsetLeft ?? 0;
+  const cliffRightOffsetRight = sceneAssets?.cliffRightOffsetRight ?? 0;
+  // A ponte sempre ocupa exatamente o vão entre as bordas internas das cliffs.
+  const bridgeGeometry = resolveBridgeGeometry({
+    gorgeLeft: sceneAssets?.gorgeLeft ?? 37.5,
+    gorgeRight: sceneAssets?.gorgeRight ?? 37.5,
+    cliffLeftOffsetLeft,
+    cliffRightOffsetRight,
+    bridge: currentLevelData?.sceneLayout.bridge,
+  });
+  const bridgeStart = bridgeGeometry.start;
+  const bridgeEnd = bridgeGeometry.end;
+  const bridgeWidth = bridgeEnd - bridgeStart;
+  // Uma expressão vazia é válida estruturalmente, mas a ponte só deve
+  // preencher conforme a soma das cartas adicionadas.
+  const fillWidth = coverage;
+  
+  // Extrair valores do nível carregado ou usar fallback
+  let values: Record<string, string>;
+  if (currentLevelData) {
+    values = LevelAdapter.getLevelValues(currentLevelData);
+  } else {
+    // Fallback para hardcoding anterior
+    values = levelThree
+      ? {
+          halfA: fraction("1/2"),
+          plusA: "+",
+          threeQuarter: fraction("3/4"),
+          minus: "−",
+          quarterA: fraction("1/4"),
+          third: fraction("1/3"),
+        }
+      : levelTwo
+        ? {
+            thirdA: fraction("1/3"),
+            plusA: "+",
+            thirdB: fraction("1/3"),
+            plusB: "+",
+            thirdC: fraction("1/3"),
+            minus: "−",
+            half: fraction("1/2"),
+            quarter: fraction("1/4"),
+          }
+        : {
+            halfA: fraction("1/2"),
+            plus: "+",
+            halfB: fraction("1/2"),
+            minus: "−",
+            third: fraction("1/3"),
+            quarterA: fraction("1/4"),
+            quarterB: fraction("1/4"),
+            fifth: fraction("1/5"),
+          };
+  }
+  
+  // Selecionar river background de acordo com cobertura
+  let riverBackground: string;
+  if (sceneAssets) {
+    const riverIndex = Math.min(sceneAssets.riverUrls.length - 1, Math.floor(coverage / 25));
+    riverBackground = sceneAssets.riverUrls[riverIndex];
+  } else {
+    const riverIndex = Math.min(3, Math.floor(coverage / 25));
+    const riverFrames = [
+      "/assets/background/river_0.png",
+      "/assets/background/river_1.png",
+      "/assets/background/river_2.png",
+      "/assets/background/river_3.png",
+    ];
+    riverBackground = riverFrames[riverIndex];
+  }
+  
+  // Extrair posição e offset dos cliffs
+  const cliffLeftOffsetTop = sceneAssets?.cliffLeftOffsetTop ?? 100;
+  const cliffRightOffsetTop = sceneAssets?.cliffRightOffsetTop ?? 100;
+  const riverLeft = sceneAssets?.riverPosition.left ?? 37.5;
+  const riverRight = sceneAssets?.riverPosition.right ?? 37.5;
+  const riverTop = sceneAssets?.riverPosition.top ?? sceneAssets?.riverOffsetTop ?? 0;
+  const riverBottom = sceneAssets?.riverPosition.bottom ?? 0;
+  const riverWidth = sceneAssets?.riverPosition.width;
+  const riverHeight = sceneAssets?.riverPosition.height;
+  const riverScale = sceneAssets?.riverPosition.scale ?? 1;
+  const riverBaseWidth = Math.max(1, 100 - riverLeft - riverRight);
+  const riverScaleX = riverWidth === undefined ? 1 : riverWidth / riverBaseWidth;
+  const bridgeStyle = `--bridge-start:${bridgeStart}%;--bridge-end:${bridgeEnd}%;--bridge-start-height:${bridgeGeometry.startHeight}%;--bridge-end-height:${bridgeGeometry.endHeight}%;--bridge-height:${bridgeGeometry.height}px`;
+  const riverStyle = `--river-left:${riverLeft}%;--river-right:${riverRight}%;--river-top:${riverTop}px;--river-bottom:${riverBottom}px;--river-scale:${riverScale};--river-scale-x:${riverScaleX}${riverHeight === undefined ? "" : `;--river-height:${riverHeight}%`}`;
+  const dinoStyle = (dino: DinoPosition): string => [
+    dino.anchor === undefined ? "" : `--dino-anchor:${dino.anchor}`,
+    dino.x === undefined ? "" : `--dino-x:${dino.x}%`,
+    dino.widthPercent === undefined ? "" : `--dino-width-percent:${dino.widthPercent}%`,
+    dino.left === undefined ? "" : `--dino-left:${dino.left}%`,
+    dino.right === undefined ? "" : `--dino-right:${dino.right}%`,
+    dino.top === undefined ? "" : `--dino-top:${dino.top}%`,
+    dino.bottom === undefined ? "" : `--dino-bottom:${dino.bottom}%`,
+    dino.width === undefined ? "" : `--dino-width:${dino.width}px`,
+    dino.height === undefined ? "" : `--dino-height:${dino.height}px`,
+    dino.scale === undefined ? "" : `--dino-scale:${dino.scale}`,
+  ].filter(Boolean).join(";");
+  const ticoStyle = dinoStyle(sceneAssets?.dinos.tico ?? { anchor: "leftCliff", x: 45, bottom: 25, widthPercent: 17, scale: 1 });
+  const lumaStyle = dinoStyle(sceneAssets?.dinos.luma ?? { anchor: "rightCliff", x: 35, bottom: 25, widthPercent: 17, scale: 1 });
+  const ticoAnchorStyle = `--anchor-left:${cliffLeftOffsetLeft}%;--anchor-width:${sceneAssets?.gorgeLeft ?? 37.5}%;--anchor-top:${cliffLeftOffsetTop}px`;
+  const lumaAnchorStyle = `--anchor-right:${cliffRightOffsetRight}%;--anchor-width:${sceneAssets?.gorgeRight ?? 37.5}%;--anchor-top:${cliffRightOffsetTop}px`;
+  const walkStyle = `--walk-end:${bridgeEnd}%`;
+  
   const phaseName = levelThree
     ? "Juntar e retirar"
     : levelTwo
@@ -300,7 +446,7 @@ function renderLevel(
     ? expression.message || message
     : expression.message;
   shell(
-    `${header("map")}<main class="level-page"><section class="level-title"><div><p class="eyebrow">FASE ${currentLevel} • ${levelThree ? "DUAS OPERAÇÕES" : levelTwo ? "PARTES EM TRÊS" : "PRIMEIRA PONTE"}</p><h1>${phaseName} <span class="star-meter">★ ☆ ☆</span></h1><p>${phaseDescription}</p></div><div class="quest-chip">✦ MISSÃO: criar uma ponte inteira</div><button class="listen" data-action="listen">🔊 Ouvir instrução</button></section><section class="world" aria-label="Vale da ponte"><img class="world-bg" src="/assets/background/background.png" alt="Vale com dois penhascos"/><div class="world-shade"></div><div class="goal-badge">OBJETIVO <strong>${fraction("1/1")}</strong></div><div class="character-tag tag-tico">TICO</div><div class="character-tag tag-luma">LUMA</div><img class="dino tico" src="/assets/dinos/dino_red_idle.png" alt="Tico"/><img class="dino luma" src="/assets/dinos/dino_blue_idle.png" alt="Luma"/><div class="bridge" style="width:${bridgeWidth}%"><div class="bridge-fill" style="width:${fillWidth}%"></div>${cards
+    `${header("map")}<main class="level-page"><section class="level-title"><div><p class="eyebrow">FASE ${currentLevel} • ${levelThree ? "DUAS OPERAÇÕES" : levelTwo ? "PARTES EM TRÊS" : "PRIMEIRA PONTE"}</p><h1>${phaseName} <span class="star-meter">★ ☆ ☆</span></h1><p>${phaseDescription}</p></div><div class="quest-chip">✦ MISSÃO: criar uma ponte inteira</div><button class="listen" data-action="listen">🔊 Ouvir instrução</button></section><section class="world" aria-label="Vale da ponte" style="--walk-end:${bridgeEnd}%;--gorge-left:${sceneAssets?.gorgeLeft ?? 37.5}%;--gorge-right:${sceneAssets?.gorgeRight ?? 37.5}%;--cliff-left-offset-left:${cliffLeftOffsetLeft}%;--cliff-right-offset-right:${cliffRightOffsetRight}%;--cliff-left-offset-top:${cliffLeftOffsetTop}px;--cliff-right-offset-top:${cliffRightOffsetTop}px;${riverStyle}"><img class="world-bg" src="${sceneAssets?.backgroundUrl ?? "/assets/background/background.png"}" alt="Céu e vale ao fundo"/><img class="world-river" src="${riverBackground}" alt="" aria-hidden="true"/><img class="world-cliff world-cliff-left" src="${sceneAssets?.cliffLeftUrl ?? "/assets/background/cliff_left.png"}" alt="Penhasco esquerdo" aria-hidden="true"/><img class="world-cliff world-cliff-right" src="${sceneAssets?.cliffRightUrl ?? "/assets/background/cliff_right.png"}" alt="Penhasco direito" aria-hidden="true"/><div class="world-shade"></div><div class="goal-badge">OBJETIVO <strong>${fraction(targetText)}</strong></div><div class="character-anchor character-anchor-tico" style="${ticoAnchorStyle}"><div class="character-tag tag-tico">TICO</div><img class="dino tico" style="${ticoStyle}" src="/assets/dinos/dino_red_idle.png" alt="Tico"/></div><div class="character-anchor character-anchor-luma" style="${lumaAnchorStyle}"><div class="character-tag tag-luma">LUMA</div><img class="dino luma" style="${lumaStyle}" src="/assets/dinos/dino_blue_idle.png" alt="Luma"/></div><div class="bridge" style="${bridgeStyle}"><div class="bridge-fill" style="width:${fillWidth}%"></div>${cards
       .filter((x) => !isOperator(x))
       .map(
         (_, i) =>
@@ -319,61 +465,127 @@ function renderLevel(
         "",
       )}</div></div><div class="play-actions"><button class="button reset" data-action="reset">↻ Refazer</button><button class="button primary" data-action="play">Testar ponte <span>▶</span></button></div></section><aside class="operation-guide"><div><strong>＋ Juntar</strong><span>${fraction("1/2")} + ${fraction("1/2")} = 1</span><small>Partes iguais: junte os numeradores.</small></div><div><strong>− Retirar</strong><span>${fraction("3/4")} − ${fraction("1/4")} = ${fraction("1/2")}</span><small>Retire partes do mesmo tamanho.</small></div></aside></main>`,
   );
+  syncBridgeGeometry();
+  startRiverAnimation();
+}
+function refreshLevelInteraction(message = "Arraste ou toque nas cartas para construir a expressão."): void {
+  if (!currentLevelData || !document.querySelector(".world")) {
+    renderLevel(message);
+    return;
+  }
+  const expression = evaluateExpression(cards);
+  const total = expression.valid ? expression.result : new Fraction(0, 1);
+  const [targetNumerator, targetDenominator = "1"] = currentLevelData.objective.split("/");
+  const target = new Fraction(Number(targetNumerator), Number(targetDenominator));
+  const coverage = Math.min(Math.max(0, total.toNumber()) / Math.max(Number.EPSILON, target.toNumber()) * 100, 250);
+  const values = LevelAdapter.getLevelValues(currentLevelData);
+  const bridge = document.querySelector<HTMLElement>(".bridge");
+  if (bridge) {
+    const markers = cards.filter((id) => !isOperator(id)).length;
+    bridge.innerHTML = `<div class="bridge-fill" style="width:${coverage}%"></div>${cards
+      .filter((id) => !isOperator(id))
+      .map((_, index) => `<i style="left:${(index + 1) * (100 / Math.max(1, markers))}%"></i>`)
+      .join("")}`;
+  }
+  const measure = document.querySelector<HTMLElement>(".measure");
+  if (measure) measure.innerHTML = `Sua ponte: <b>${expression.valid ? fraction(total.toString()) : "—"}</b> de ${fraction(currentLevelData.objective)}`;
+  const dropzone = document.querySelector<HTMLElement>(".dropzone");
+  if (dropzone) dropzone.innerHTML = cards.length
+    ? cards.map((id) => `<button class="mini-card" data-remove="${id}">${values[id]}</button>`).join("")
+    : '<span class="placeholder">Escolha as peças que formam a ponte</span>';
+  const feedback = document.querySelector<HTMLElement>(".feedback");
+  if (feedback) feedback.textContent = expression.valid ? expression.message || message : expression.message;
+  const cardList = document.querySelector<HTMLElement>(".card-list");
+  if (cardList) cardList.innerHTML = orderedDeckKeys(Object.keys(values))
+    .map((id) => `<button class="math-card ${cards.includes(id) ? "used" : ""}" data-card="${id}" ${cards.includes(id) ? "disabled" : ""}>${values[id]}</button>`)
+    .join("");
+}
+let bridgeResizeObserver: ResizeObserver | undefined;
+function syncBridgeGeometry(): void {
+  bridgeResizeObserver?.disconnect();
+  const world = document.querySelector<HTMLElement>(".world");
+  const bridge = document.querySelector<HTMLElement>(".bridge");
+  if (!world || !bridge) return;
+  const update = () => {
+    const rect = world.getBoundingClientRect();
+    const start = Number.parseFloat(bridge.style.getPropertyValue("--bridge-start")) / 100;
+    const end = Number.parseFloat(bridge.style.getPropertyValue("--bridge-end")) / 100;
+    const startHeight = Number.parseFloat(bridge.style.getPropertyValue("--bridge-start-height")) / 100;
+    const endHeight = Number.parseFloat(bridge.style.getPropertyValue("--bridge-end-height")) / 100;
+    const horizontal = rect.width * (end - start);
+    const vertical = rect.height * (endHeight - startHeight);
+    bridge.style.left = `${rect.width * start}px`;
+    bridge.style.bottom = `${rect.height * startHeight}px`;
+    bridge.style.width = `${Math.hypot(horizontal, vertical)}px`;
+    bridge.style.transform = `rotate(${-Math.atan2(vertical, horizontal)}rad)`;
+  };
+  bridgeResizeObserver = new ResizeObserver(update);
+  bridgeResizeObserver.observe(world);
+  update();
+}
+let riverTimer: number | undefined;
+function startRiverAnimation(): void {
+  if (riverTimer !== undefined) window.clearInterval(riverTimer);
+  const img = document.querySelector<HTMLImageElement>(".world-river");
+  if (!img) return;
+  const frames = sceneAssets?.riverUrls.length
+    ? sceneAssets.riverUrls
+    : [
+        "/assets/background/river_0.png",
+        "/assets/background/river_1.png",
+        "/assets/background/river_2.png",
+        "/assets/background/river_3.png",
+      ];
+  if (settings.reducedMotion) {
+    img.src = frames[0];
+    return;
+  }
+  let index = 0;
+  riverTimer = window.setInterval(() => {
+    index = (index + 1) % frames.length;
+    img.src = frames[index];
+  }, 550);
 }
 function assess(): void {
-  const isFraction = (id: string) => !isOperator(id);
   const sameCards = (a: string[], b: string[]): boolean =>
     a.length === b.length &&
     [...a].sort().join("|") === [...b].sort().join("|");
-  const correctShape =
-    currentLevel === 1
-      ? cards.length === 3 &&
-        isFraction(cards[0]) &&
-        cards[1] === "plus" &&
-        isFraction(cards[2])
-      : currentLevel === 2
-        ? cards.length === 5 &&
-          isFraction(cards[0]) &&
-          isOperator(cards[1]) &&
-          isFraction(cards[2]) &&
-          isOperator(cards[3]) &&
-          isFraction(cards[4]) &&
-          sameCards(
-            [cards[0], cards[2], cards[4]],
-            ["thirdA", "thirdB", "thirdC"],
-          ) &&
-          sameCards([cards[1], cards[3]], ["plusA", "plusB"])
-        : cards.length === 5 &&
-          sameCards([cards[0], cards[2]], ["halfA", "threeQuarter"]) &&
-          cards[1] === "plusA" &&
-          cards[3] === "minus" &&
-          cards[4] === "quarterA";
+  const pattern = currentLevelData?.validationPattern;
+  const correctShape = pattern
+    ? cards.length === pattern.expectedCardCount &&
+      (!pattern.requiredCards || sameCards(cards, pattern.requiredCards)) &&
+      (!pattern.structure || cards.every((id, index) =>
+        currentLevelData?.deck.cards.find((card) => card.id === id)?.type === pattern.structure?.[index],
+      ))
+    : false;
   const evaluated = evaluateExpression(cards);
   const sum = evaluated.result;
+  const [targetNumerator, targetDenominator = "1"] = (currentLevelData?.objective ?? "1/1").split("/");
+  const target = new Fraction(Number(targetNumerator), Number(targetDenominator));
   const correct =
     evaluated.valid &&
     evaluated.complete &&
     correctShape &&
-    sum.equals(new Fraction(1, 1));
+    sum.equals(target);
   if (!correct) {
     const feedback =
       !evaluated.valid || !evaluated.complete
         ? evaluated.message
         : cards.length
-          ? sum.toNumber() > 1
-            ? `A ponte mede ${sum.toString()}: ela ultrapassa o outro lado. Tente formar exatamente 1 inteiro.`
+          ? sum.toNumber() > target.toNumber()
+            ? `A ponte mede ${sum.toString()}: ela ultrapassa o outro lado. Tente formar exatamente ${target.toString()}.`
             : "A ponte ainda não alcança o outro lado. Observe a medida e tente de novo."
           : "Escolha as peças primeiro.";
-    renderLevel(feedback);
+    refreshLevelInteraction(feedback);
     say(feedback);
     return;
   }
-  renderLevel("A ponte está pronta! Tico consegue atravessar.");
+  refreshLevelInteraction("A ponte está pronta! Tico consegue atravessar.");
   animateTico();
 }
 function animateTico(): void {
   const dino = document.querySelector<HTMLImageElement>(".tico");
-  const tag = document.querySelector<HTMLElement>(".tag-tico");
+  const ticoAnchor = document.querySelector<HTMLElement>(".character-anchor-tico");
   if (!dino) {
     discovery();
     return;
@@ -388,18 +600,18 @@ function animateTico(): void {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       dino.classList.add("walking");
-      tag?.classList.add("walking");
+      ticoAnchor?.classList.add("walking");
     });
   });
   const cycle = window.setInterval(() => {
     dino.src = frames[index++ % frames.length];
-  }, 150);
+  }, 120);
   window.setTimeout(
     () => {
       window.clearInterval(cycle);
       discovery();
     },
-    settings.reducedMotion ? 0 : 1800,
+    settings.reducedMotion ? 0 : 1200,
   );
 }
 function discovery(): void {
@@ -495,15 +707,14 @@ function settingsPage(accessibility = false): void {
 }
 function about(): void {
   shell(
-    `${header("home")}<main class="simple-page about"><p class="eyebrow">SOBRE O PROJETO</p><h1>Um mundo onde a matemática ganha forma.</h1><p class="page-lead">Mundo das Frações é um jogo educativo brasileiro para apresentar frações por meio de exploração, construção e descobertas visuais.</p><section class="about-grid"><article><span>◈</span><h3>Aprender fazendo</h3><p>Em vez de responder a um quiz, a pessoa joga e observa as consequências das suas escolhas.</p></article><article><span>♿</span><h3>Ritmo respeitoso</h3><p>Sem cronômetros, com linguagem acolhedora e controles de estímulos desde o começo.</p></article><article><span>✦</span><h3>Primeiro slice</h3><p>Esta versão demonstra o primeiro desafio: compreender que duas metades formam um inteiro.</p></article></section><section class="project-details"><span>TECNOLOGIAS</span><strong>TypeScript · Vite · Web Speech API</strong><span>TIPOGRAFIA</span><strong>Fraunces e DM Sans</strong><span>REPOSITÓRIO</span><strong><a href="https://github.com/Isamuh/mundo-das-fracoes.git" target="_blank" rel="noreferrer noopener">github.com/Isamuh/mundo-das-fracoes</a></strong></section></main>`,
+    `${header("home")}<main class="simple-page about"><p class="eyebrow">SOBRE O PROJETO</p><h1>Um mundo onde a matemática ganha forma.</h1><p class="page-lead">Mundo das Frações é um jogo educativo brasileiro para apresentar frações por meio de exploração, construção e descobertas visuais.</p><section class="about-grid"><article><span>🎓</span><h3>Aprender fazendo</h3><p>Em vez de responder a um quiz, a pessoa joga e observa as consequências das suas escolhas.</p></article><article><span>♿</span><h3>Ritmo respeitoso</h3><p>Sem cronômetros, com linguagem acolhedora e controles de estímulos desde o começo.</p></article><article><span>🛠️</span><h3>Primeiro slice</h3><p>Esta versão demonstra o primeiro desafio: compreender que duas metades formam um inteiro.</p></article></section><section class="project-details"><span>TECNOLOGIAS</span><strong>TypeScript · Vite · Web Speech API</strong><span>TIPOGRAFIA</span><strong>Fraunces e DM Sans</strong><span>REPOSITÓRIO</span><strong><a href="https://github.com/Isamuh/mundo-das-fracoes.git" target="_blank" rel="noreferrer noopener">github.com/Isamuh/mundo-das-fracoes</a></strong></section></main>`,
   );
 }
 function credits(): void {
   shell(
-    `${header("home")}<main class="simple-page credits"><p class="eyebrow">CRÉDITOS</p><h1>Feito para criar conexões.</h1><section class="credits-card"><div><span>PROGRAMAÇÃO</span><strong>David Isamu (Github: @Isamuh), Leonardo Tudela</strong></div><div><span>ARTE</span><strong>Pedro Henrique</strong></div><div><span>CONCEITO E DESIGN</span><strong>Leonardo Tudela, Daniel Cezar</strong></div><div><span>DESIGN EDUCACIONAL</span><strong>Ismael Prado</strong></div><p>Obrigado por ajudar a tornar a matemática mais concreta, curiosa e acolhedora.</p></section></main>`,
+    `${header("home")}<main class="simple-page credits"><p class="eyebrow">CRÉDITOS</p><h1>Feito para criar conexões.</h1><section class="credits-card"><div><span>PROGRAMAÇÃO</span><strong>David Isamu (Github: @Isamuh)</strong></div><div><span>ARTE</span><strong>Pedro Henrique</strong></div><div><span>CONCEITO E DESIGN</span><strong>Leonardo Tudela, Daniel Cezar</strong></div><div><span>DESIGN EDUCACIONAL</span><strong>Ismael Prado</strong></div><p>Obrigado por ajudar a tornar a matemática mais concreta, curiosa e acolhedora.</p></section></main>`,
   );
 }
-
 app.addEventListener("click", (event) => {
   const element = (event.target as HTMLElement).closest<HTMLElement>("button");
   if (!element) return;
@@ -531,16 +742,16 @@ app.addEventListener("click", (event) => {
     )
       return;
     cards.push(id);
-    renderLevel();
+    refreshLevelInteraction();
   }
   const remove = element.dataset.remove;
   if (remove) {
     cards = cards.filter((x) => x !== remove);
-    renderLevel();
+    refreshLevelInteraction();
   }
   if (element.dataset.action === "reset") {
     cards = [];
-    renderLevel("Tudo bem recomeçar. Escolha as peças com calma.");
+    refreshLevelInteraction("Tudo bem recomeçar. Escolha as peças com calma.");
   }
   if (element.dataset.action === "play") assess();
   if (element.dataset.action === "listen")

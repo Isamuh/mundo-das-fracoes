@@ -1,0 +1,102 @@
+{
+  "id": "level-1-3",
+  "number": 2,
+  "world": 1,
+  "title": "Três terços",
+  "description": "Use três partes iguais para completar 1 inteiro.",
+  "instruction": "Fase dois: Três terços. Use três partes iguais para completar um inteiro.",
+  "objective": "1/1",
+  "deck": {
+    "cards": [
+      {
+        "id": "thirdA",
+        "type": "fraction",
+        "display": "1/3",
+        "value": "1/3"
+      },
+      {
+        "id": "plusA",
+        "type": "operator",
+        "display": "+",
+        "value": "+"
+      },
+      {
+        "id": "thirdB",
+        "type": "fraction",
+        "display": "1/3",
+        "value": "1/3"
+      },
+      {
+        "id": "plusB",
+        "type": "operator",
+        "display": "+",
+        "value": "+"
+      },
+      {
+        "id": "thirdC",
+        "type": "fraction",
+        "display": "1/3",
+        "value": "1/3"
+      },
+      {
+        "id": "minus",
+        "type": "operator",
+        "display": "−",
+        "value": "-"
+      },
+      {
+        "id": "half",
+        "type": "fraction",
+        "display": "1/2",
+        "value": "1/2"
+      },
+      {
+        "id": "quarter",
+        "type": "fraction",
+        "display": "1/4",
+        "value": "1/4"
+      }
+    ]
+  },
+  "sceneLayout": {
+    "gorgeLeft": 37.5,
+    "gorgeRight": 37.5,
+    "cliffLeftOffsetLeft": -5,
+    "cliffRightOffsetRight": -4,
+    "cliffLeftOffsetTop": 155,
+    "cliffRightOffsetTop": 125,
+    "river": {
+      "left": 37.5,
+      "right": 37.5,
+      "top": 270,
+      "bottom": 0,
+      "width": 100,
+      "height": 10,
+      "scale": 1
+    },
+    "bridge": {
+      "start": -4,
+      "end": 2.5,
+      "bottom": 33,
+      "height": 17
+    },
+    "dinos": {
+      "tico": { "anchor": "leftCliff", "x": 45, "bottom": 65, "widthPercent": 17, "scale": 1 },
+      "luma": { "anchor": "rightCliff", "x": 35, "bottom": 55, "widthPercent": 17, "scale": 1 }
+    },
+    "backgroundUrl": "/assets/background/background.png",
+    "riverUrls": [
+      "/assets/background/river_0.png",
+      "/assets/background/river_1.png",
+      "/assets/background/river_2.png",
+      "/assets/background/river_3.png"
+    ],
+    "cliffLeftUrl": "/assets/background/cliff_left.png",
+    "cliffRightUrl": "/assets/background/cliff_right.png"
+  },
+  "validationPattern": {
+    "expectedCardCount": 5,
+    "requiredCards": ["thirdA", "thirdB", "thirdC", "plusA", "plusB"],
+    "structure": ["fraction", "operator", "fraction", "operator", "fraction"]
+  }
+}

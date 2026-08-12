@@ -1,0 +1,103 @@
+{
+  "id": "level-1-1",
+  "number": 1,
+  "world": 1,
+  "title": "Duas metades",
+  "description": "Complete 1 inteiro para encontrar a Luma.",
+  "instruction": "Fase um: Duas metades. Use as cartas para construir uma ponte que complete um inteiro.",
+  "objective": "1/1",
+  "deck": {
+    "cards": [
+      {
+        "id": "halfA",
+        "type": "fraction",
+        "display": "1/2",
+        "value": "1/2"
+      },
+      {
+        "id": "plus",
+        "type": "operator",
+        "display": "+",
+        "value": "+"
+      },
+      {
+        "id": "halfB",
+        "type": "fraction",
+        "display": "1/2",
+        "value": "1/2"
+      },
+      {
+        "id": "minus",
+        "type": "operator",
+        "display": "−",
+        "value": "-"
+      },
+      {
+        "id": "third",
+        "type": "fraction",
+        "display": "1/3",
+        "value": "1/3"
+      },
+      {
+        "id": "quarterA",
+        "type": "fraction",
+        "display": "1/4",
+        "value": "1/4"
+      },
+      {
+        "id": "quarterB",
+        "type": "fraction",
+        "display": "1/4",
+        "value": "1/4"
+      },
+      {
+        "id": "fifth",
+        "type": "fraction",
+        "display": "1/5",
+        "value": "1/5"
+      }
+    ]
+  },
+  "sceneLayout": {
+    "gorgeLeft": 37.5,
+    "gorgeRight": 37.5,
+    "cliffLeftOffsetLeft": -5,
+    "cliffRightOffsetRight": -4,
+    "cliffLeftOffsetTop": 155,
+    "cliffRightOffsetTop": 125,
+    "riverOffsetTop": 10,
+    "river": {
+      "left": 37.5,
+      "right": 37.5,
+      "top": 270,
+      "bottom": 0,
+      "width": 100,
+      "height": 10,
+      "scale": 1
+    },
+    "bridge": {
+      "start": -4,
+      "end": 2.5,
+      "bottom": 33,
+      "height": 17
+    },
+    "dinos": {
+      "tico": { "anchor": "leftCliff", "x": 45, "bottom": 65, "widthPercent": 17, "scale": 1 },
+      "luma": { "anchor": "rightCliff", "x": 35, "bottom": 55, "widthPercent": 17, "scale": 1 }
+    },
+    "backgroundUrl": "/assets/background/background.png",
+    "riverUrls": [
+      "/assets/background/river_0.png",
+      "/assets/background/river_1.png",
+      "/assets/background/river_2.png",
+      "/assets/background/river_3.png"
+    ],
+    "cliffLeftUrl": "/assets/background/cliff_left.png",
+    "cliffRightUrl": "/assets/background/cliff_right.png"
+  },
+  "validationPattern": {
+    "expectedCardCount": 3,
+    "requiredCards": ["halfA", "halfB", "plus"],
+    "structure": ["fraction", "operator", "fraction"]
+  }
+}
