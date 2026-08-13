@@ -192,8 +192,28 @@ const guideCopy: Record<
     result: "1/4",
   },
 };
+const guideCopyHard: Record<
+  string,
+  { before: string; after: string; result: string }
+> = {
+  join: {
+    before: "Toque para ver uma metade e um quarto se juntando.",
+    after: "A metade virou dois quartos e se juntou ao quarto, formando três quartos.",
+    result: "3/4",
+  },
+  remove: {
+    before: "Toque para ver uma metade saindo de três quartos.",
+    after: "A metade virou dois quartos e saiu de três quartos. Sobrou um quarto.",
+    result: "1/4",
+  },
+  multiply: guideCopy.multiply,
+  divide: guideCopy.divide,
+};
+function activeGuideCopy(key: string) {
+  return settings.hardMode && guideCopyHard[key] ? guideCopyHard[key] : guideCopy[key];
+}
 function toggleGuide(key: string): void {
-  const entry = guideCopy[key];
+  const entry = activeGuideCopy(key);
   const bar = document.querySelector<HTMLElement>(
     `.guide-bar[data-guide="${key}"]`,
   );
@@ -211,7 +231,7 @@ function toggleGuide(key: string): void {
   say(active ? entry.after : entry.before);
 }
 function speakGuide(key: string): void {
-  const entry = guideCopy[key];
+  const entry = activeGuideCopy(key);
   const bar = document.querySelector<HTMLElement>(
     `.guide-bar[data-guide="${key}"]`,
   );
@@ -261,8 +281,33 @@ function home(): void {
   );
 }
 function operationsGuide(): void {
+  const hard = settings.hardMode;
+  const lead = hard
+    ? "Peças de tamanhos diferentes não se encaixam direto. Veja como <b>+</b> e <b>−</b> convertem as partes antes de combinar."
+    : "Toque nas peças abaixo para ver o que <b>+</b> e <b>−</b> fazem com uma ponte.";
+  const joinBar = hard
+    ? `<div class="guide-bar hard" data-guide="join"><span class="guide-piece piece-a"></span><span class="guide-piece piece-b"></span><span class="guide-piece piece-empty"></span></div>`
+    : `<div class="guide-bar" data-guide="join"><span class="guide-piece piece-a"></span><span class="guide-piece piece-b"></span></div>`;
+  const joinCaption = hard
+    ? `${fraction("1/2")}<b>+</b>${fraction("1/4")}<b>=</b><strong data-guide-result="join">?</strong>`
+    : `${fraction("1/2")}<b>+</b>${fraction("1/2")}<b>=</b><strong data-guide-result="join">?</strong>`;
+  const joinCopy = hard
+    ? "Uma metade e um quarto têm tamanhos diferentes. Converta a metade em dois quartos e junte tudo: três quartos."
+    : "Duas metades do mesmo tamanho se encaixam e completam a unidade.";
+  const removeBar = hard
+    ? `<div class="guide-bar hard quarters" data-guide="remove"><span class="guide-piece"></span><span class="guide-piece removable"></span><span class="guide-piece removable"></span><span class="guide-piece"></span></div>`
+    : `<div class="guide-bar quarters" data-guide="remove"><span class="guide-piece"></span><span class="guide-piece"></span><span class="guide-piece removable"></span><span class="guide-piece"></span></div>`;
+  const removeCaption = hard
+    ? `${fraction("3/4")}<b>−</b>${fraction("1/2")}<b>=</b><strong data-guide-result="remove">?</strong>`
+    : `${fraction("3/4")}<b>−</b>${fraction("1/4")}<b>=</b><strong data-guide-result="remove">?</strong>`;
+  const removeCopy = hard
+    ? "Para tirar uma metade de três quartos, converta-a em dois quartos e retire os dois. Sobra um quarto."
+    : "Ao tirar um quarto de três quartos, sobra uma metade da ponte.";
+  const note = hard
+    ? "✦ Aqui as peças têm tamanhos diferentes. Converta-as em partes iguais antes de juntar ou retirar."
+    : "✦ Primeiro, use peças do mesmo tamanho. Mais tarde, o jogo mostrará como combinar tamanhos diferentes.";
   shell(
-    `${header("home")}<main class="guide-page"><p class="eyebrow">GUIA DO MUNDO 1</p><h1>Juntar e retirar partes</h1><p class="page-lead">Toque nas peças abaixo para ver o que <b>+</b> e <b>−</b> fazem com uma ponte.</p><section class="guide-grid"><article class="guide-card"><span class="guide-symbol">+</span><h2>Juntar</h2><div class="guide-bar" data-guide="join"><span class="guide-piece piece-a"></span><span class="guide-piece piece-b"></span></div><div class="guide-caption" aria-live="polite">${fraction("1/2")}<b>+</b>${fraction("1/2")}<b>=</b><strong data-guide-result="join">?</strong></div><p>Duas metades do mesmo tamanho se encaixam e completam a unidade.</p><div class="guide-actions"><button class="button ghost guide-toggle" data-action="guide-toggle" data-guide="join" data-label="Toque para juntar">Toque para juntar</button><button class="icon-btn" data-action="guide-speak" data-guide="join" aria-label="Ouvir explicação de juntar">🔊</button></div></article><article class="guide-card"><span class="guide-symbol minus-symbol">−</span><h2>Retirar</h2><div class="guide-bar quarters" data-guide="remove"><span class="guide-piece"></span><span class="guide-piece"></span><span class="guide-piece removable"></span><span class="guide-piece"></span></div><div class="guide-caption" aria-live="polite">${fraction("3/4")}<b>−</b>${fraction("1/4")}<b>=</b><strong data-guide-result="remove">?</strong></div><p>Ao tirar um quarto de três quartos, sobra uma metade da ponte.</p><div class="guide-actions"><button class="button ghost guide-toggle" data-action="guide-toggle" data-guide="remove" data-label="Toque para retirar">Toque para retirar</button><button class="icon-btn" data-action="guide-speak" data-guide="remove" aria-label="Ouvir explicação de retirar">🔊</button></div></article></section><aside class="guide-note">✦ Primeiro, use peças do mesmo tamanho. Mais tarde, o jogo mostrará como combinar tamanhos diferentes.</aside><button class="button primary" data-go="map">Ir para as fases <span>→</span></button></main>`,
+    `${header("home")}<main class="guide-page"><p class="eyebrow">GUIA DO MUNDO 1</p><h1>Juntar e retirar partes</h1><p class="page-lead">${lead}</p><section class="guide-grid"><article class="guide-card"><span class="guide-symbol">+</span><h2>Juntar</h2>${joinBar}<div class="guide-caption" aria-live="polite">${joinCaption}</div><p>${joinCopy}</p><div class="guide-actions"><button class="button ghost guide-toggle" data-action="guide-toggle" data-guide="join" data-label="Toque para juntar">Toque para juntar</button><button class="icon-btn" data-action="guide-speak" data-guide="join" aria-label="Ouvir explicação de juntar">🔊</button></div></article><article class="guide-card"><span class="guide-symbol minus-symbol">−</span><h2>Retirar</h2>${removeBar}<div class="guide-caption" aria-live="polite">${removeCaption}</div><p>${removeCopy}</p><div class="guide-actions"><button class="button ghost guide-toggle" data-action="guide-toggle" data-guide="remove" data-label="Toque para retirar">Toque para retirar</button><button class="icon-btn" data-action="guide-speak" data-guide="remove" aria-label="Ouvir explicação de retirar">🔊</button></div></article></section><aside class="guide-note">${note}</aside><button class="button primary" data-go="map">Ir para as fases <span>→</span></button></main>`,
   );
 }
 function map(): void {
@@ -300,7 +345,9 @@ async function startLevelTwo(): Promise<void> {
   deckOrder = [];
   renderLevel();
   say(
-    "Fase dois: Três terços. Use três partes iguais para completar um inteiro.",
+    settings.hardMode
+      ? "Fase dois: Dois quartos e uma metade. Use as cartas para completar um inteiro."
+      : "Fase dois: Três terços. Use três partes iguais para completar um inteiro.",
   );
 }
 async function startLevelThree(): Promise<void> {
@@ -622,24 +669,39 @@ function animateTico(): void {
 }
 function discovery(): void {
   const level = currentLevel;
+  const hard = settings.hardMode;
   const title =
     level === 3
       ? "Você dominou duas operações!"
       : level === 2
-        ? "Você juntou três terços!"
+        ? hard
+          ? "Você juntou partes diferentes!"
+          : "Você juntou três terços!"
         : "Você completou um inteiro!";
   const explanation =
     level === 3
-      ? "Você juntou três quartos e uma metade, depois retirou um quarto. O resultado encaixou exatamente no inteiro."
+      ? hard
+        ? "Você juntou três quartos e mais três quartos, depois retirou uma metade. O resultado encaixou exatamente no inteiro."
+        : "Você juntou três quartos e uma metade, depois retirou um quarto. O resultado encaixou exatamente no inteiro."
       : level === 2
-        ? "Três terços do mesmo tamanho se juntam para formar um inteiro completo."
-        : "Duas metades do mesmo tamanho se juntam para formar um inteiro completo.";
+        ? hard
+          ? "Dois quartos e uma metade se juntam para formar um inteiro completo."
+          : "Três terços do mesmo tamanho se juntam para formar um inteiro completo."
+        : hard
+          ? "Um terço e dois terços se juntam para formar um inteiro completo."
+          : "Duas metades do mesmo tamanho se juntam para formar um inteiro completo.";
   const equation =
     level === 3
-      ? `${fraction("1/2")} <strong>+</strong> ${fraction("3/4")} <strong>−</strong> ${fraction("1/4")} <strong>=</strong> <b>1</b>`
+      ? hard
+        ? `${fraction("3/4")} <strong>+</strong> ${fraction("3/4")} <strong>−</strong> ${fraction("1/2")} <strong>=</strong> <b>1</b>`
+        : `${fraction("1/2")} <strong>+</strong> ${fraction("3/4")} <strong>−</strong> ${fraction("1/4")} <strong>=</strong> <b>1</b>`
       : level === 2
-        ? `${fraction("1/3")} <strong>+</strong> ${fraction("1/3")} <strong>+</strong> ${fraction("1/3")} <strong>=</strong> <b>1</b>`
-        : `${fraction("1/2")} <strong>+</strong> ${fraction("1/2")} <strong>=</strong> ${fraction("2/2")} <strong>=</strong> <b>1</b>`;
+        ? hard
+          ? `${fraction("1/4")} <strong>+</strong> ${fraction("1/4")} <strong>+</strong> ${fraction("1/2")} <strong>=</strong> <b>1</b>`
+          : `${fraction("1/3")} <strong>+</strong> ${fraction("1/3")} <strong>+</strong> ${fraction("1/3")} <strong>=</strong> <b>1</b>`
+        : hard
+          ? `${fraction("1/3")} <strong>+</strong> ${fraction("2/3")} <strong>=</strong> ${fraction("3/3")} <strong>=</strong> <b>1</b>`
+          : `${fraction("1/2")} <strong>+</strong> ${fraction("1/2")} <strong>=</strong> ${fraction("2/2")} <strong>=</strong> <b>1</b>`;
   const modal = document.createElement("div");
   modal.className = "modal-wrap";
   modal.innerHTML = `<div class="discovery"><span class="spark">✦</span><p class="eyebrow">NOVA DESCOBERTA</p><h2>${title}</h2><div class="equation">${equation}</div><p>${explanation}</p><div><button class="button ghost" data-modal="listen">🔊 Ouvir</button><button class="button primary" data-modal="close">${level === 3 ? "Ir ao Mundo 2" : "Próxima fase"} →</button></div></div>`;
@@ -723,7 +785,7 @@ function about(): void {
 }
 function credits(): void {
   shell(
-    `${header("home")}<main class="simple-page credits"><p class="eyebrow">CRÉDITOS</p><h1>Feito para criar conexões.</h1><section class="credits-card"><div><span>PROGRAMAÇÃO</span><strong>David Isamu (@Isamuh), Leonardo Tudela (@Tudsdela)</strong></div><div><span>ARTE</span><strong>Pedro Henrique</strong></div><div><span>CONCEITO E DESIGN</span><strong>Leonardo Tudela, Daniel Cezar</strong></div><div><span>DESIGN EDUCACIONAL</span><strong>Ismael Prado</strong></div><p>Obrigado por ajudar a tornar a matemática mais concreta, curiosa e acolhedora.</p></section></main>`,
+    `${header("home")}<main class="simple-page credits"><p class="eyebrow">CRÉDITOS</p><h1>Feito para criar conexões.</h1><section class="credits-card"><div><span>PROGRAMAÇÃO</span><strong>David Isamu (@Isamuh), Leonardo Tudela</strong></div><div><span>ARTE</span><strong>Pedro Henrique</strong></div><div><span>CONCEITO E DESIGN</span><strong>Leonardo Tudela, Daniel Cezar</strong></div><div><span>DESIGN EDUCACIONAL</span><strong>Ismael Prado</strong></div><p>Obrigado por ajudar a tornar a matemática mais concreta, curiosa e acolhedora.</p></section></main>`,
   );
 }
 app.addEventListener("click", (event) => {
@@ -770,7 +832,9 @@ app.addEventListener("click", (event) => {
       currentLevel === 3
         ? "Fase três. Use mais e menos para construir exatamente um inteiro."
         : currentLevel === 2
-          ? "Fase dois. Use três terços e duas cartas de mais para construir um inteiro."
+          ? settings.hardMode
+            ? "Fase dois. Use dois quartos e uma metade para construir um inteiro."
+            : "Fase dois. Use três terços e duas cartas de mais para construir um inteiro."
           : "Fase um. Use as cartas para construir uma ponte que complete um inteiro.",
     );
   if (element.dataset.action === "guide-toggle" && element.dataset.guide)
@@ -788,14 +852,6 @@ app.addEventListener("click", (event) => {
     element.dataset.action === "open-level-three"
   )
     startLevelThree();
-  if (element.dataset.modal === "close") {
-    localStorage.setItem("mdf-level-1-complete", "true");
-    map();
-  }
-  if (element.dataset.modal === "listen")
-    say(
-      "Duas metades do mesmo tamanho se juntam para formar um inteiro completo.",
-    );
 });
 app.addEventListener("input", (event) => {
   const input = event.target as HTMLInputElement;
