@@ -109,6 +109,16 @@ export interface SceneLayout {
   cliffRightUrl: string;
 }
 
+/** Padrão de validação de uma solução (estrutura de cards corretos) */
+export interface ValidationPattern {
+  /** Número esperado de cards */
+  expectedCardCount: number;
+  /** IDs de cards que devem aparecer (ordem não importa) */
+  requiredCards?: string[];
+  /** Estrutura esperada (ex. "fraction + fraction - fraction") */
+  structure?: string[];
+}
+
 /** Especificação de uma fase/nível */
 export interface Level {
   id: string;
@@ -122,17 +132,14 @@ export interface Level {
   objective: string;
   /** Cards disponíveis nesta fase */
   deck: Deck;
+  /** Cards alternativos para o modo difícil (nível ensino médio) */
+  hardDeck?: Deck;
   /** Definição da cena visual */
   sceneLayout: SceneLayout;
   /** Validação: qual é o padrão esperado da solução (estrutura de cards corretos) */
-  validationPattern: {
-    /** Número esperado de cards */
-    expectedCardCount: number;
-    /** IDs de cards que devem aparecer (ordem não importa) */
-    requiredCards?: string[];
-    /** Estrutura esperada (ex. "fraction + fraction - fraction") */
-    structure?: string[];
-  };
+  validationPattern: ValidationPattern;
+  /** Padrão de validação da solução no modo difícil */
+  validationPatternHard?: ValidationPattern;
 }
 
 /** Mundo (agrupamento de fases) */

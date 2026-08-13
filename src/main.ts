@@ -12,6 +12,7 @@ type Settings = {
   sound: boolean;
   darkTheme: boolean;
   volume: number;
+  hardMode: boolean;
 };
 const defaults: Settings = {
   reducedMotion: false,
@@ -20,6 +21,7 @@ const defaults: Settings = {
   sound: true,
   darkTheme: false,
   volume: 12,
+  hardMode: false,
 };
 let settings: Settings = {
   ...defaults,
@@ -92,8 +94,10 @@ const fraction = (text: string) => {
     ? `<span class="whole-number">${a}</span>`
     : `<span class="fraction"><b>${a}</b><i class="fraction-line"></i><b>${b}</b><em class="fraction-bar"><u style="width:${Math.min(100, (Number(a) / Number(b)) * 100)}%"></u></em></span>`;
 };
+const activeDeck = () =>
+  currentLevelData ? LevelAdapter.getDeck(currentLevelData, settings.hardMode) : null;
 const cardFraction = (id: string) => {
-  const value = currentLevelData?.deck.cards.find((card) => card.id === id)?.value;
+  const value = activeDeck()?.cards.find((card) => card.id === id)?.value;
   if (value?.includes("/")) {
     const [numerator, denominator] = value.split("/");
     return new Fraction(Number(numerator), Number(denominator));
@@ -106,7 +110,7 @@ const cardFraction = (id: string) => {
     : new Fraction(1, 2);
 };
 const isOperator = (id: string) =>
-  currentLevelData?.deck.cards.find((card) => card.id === id)?.type === "operator" ||
+  activeDeck()?.cards.find((card) => card.id === id)?.type === "operator" ||
   id.startsWith("plus") || id === "minus";
 type ExpressionState = {
   valid: boolean;
@@ -349,7 +353,7 @@ function renderLevel(
   // Extrair valores do nível carregado ou usar fallback
   let values: Record<string, string>;
   if (currentLevelData) {
-    values = LevelAdapter.getLevelValues(currentLevelData);
+    values = LevelAdapter.getLevelValues(currentLevelData, settings.hardMode);
   } else {
     // Fallback para hardcoding anterior
     values = levelThree
@@ -478,7 +482,7 @@ function refreshLevelInteraction(message = "Arraste ou toque nas cartas para con
   const [targetNumerator, targetDenominator = "1"] = currentLevelData.objective.split("/");
   const target = new Fraction(Number(targetNumerator), Number(targetDenominator));
   const coverage = Math.min(Math.max(0, total.toNumber()) / Math.max(Number.EPSILON, target.toNumber()) * 100, 250);
-  const values = LevelAdapter.getLevelValues(currentLevelData);
+  const values = LevelAdapter.getLevelValues(currentLevelData, settings.hardMode);
   const bridge = document.querySelector<HTMLElement>(".bridge");
   if (bridge) {
     const markers = cards.filter((id) => !isOperator(id)).length;
@@ -550,12 +554,14 @@ function assess(): void {
   const sameCards = (a: string[], b: string[]): boolean =>
     a.length === b.length &&
     [...a].sort().join("|") === [...b].sort().join("|");
-  const pattern = currentLevelData?.validationPattern;
+  const pattern = currentLevelData
+    ? LevelAdapter.getValidationPattern(currentLevelData, settings.hardMode)
+    : undefined;
   const correctShape = pattern
     ? cards.length === pattern.expectedCardCount &&
       (!pattern.requiredCards || sameCards(cards, pattern.requiredCards)) &&
       (!pattern.structure || cards.every((id, index) =>
-        currentLevelData?.deck.cards.find((card) => card.id === id)?.type === pattern.structure?.[index],
+        activeDeck()?.cards.find((card) => card.id === id)?.type === pattern.structure?.[index],
       ))
     : false;
   const evaluated = evaluateExpression(cards);
@@ -697,6 +703,11 @@ function settingsPage(accessibility = false): void {
           "Ritmo visual tranquilo",
           "Reduz movimentos decorativos.",
         ],
+        [
+          "hardMode",
+          "Modo difícil",
+          "Troca as cartas por números maiores e combinações de nível ensino médio.",
+        ],
       ];
   const volumeRow = accessibility
     ? ""
@@ -712,7 +723,7 @@ function about(): void {
 }
 function credits(): void {
   shell(
-    `${header("home")}<main class="simple-page credits"><p class="eyebrow">CRÉDITOS</p><h1>Feito para criar conexões.</h1><section class="credits-card"><div><span>PROGRAMAÇÃO</span><strong>David Isamu (Github: @Isamuh)</strong></div><div><span>ARTE</span><strong>Pedro Henrique</strong></div><div><span>CONCEITO E DESIGN</span><strong>Leonardo Tudela, Daniel Cezar</strong></div><div><span>DESIGN EDUCACIONAL</span><strong>Ismael Prado</strong></div><p>Obrigado por ajudar a tornar a matemática mais concreta, curiosa e acolhedora.</p></section></main>`,
+    `${header("home")}<main class="simple-page credits"><p class="eyebrow">CRÉDITOS</p><h1>Feito para criar conexões.</h1><section class="credits-card"><div><span>PROGRAMAÇÃO</span><strong>David Isamu (@Isamuh), Leonardo Tudela (@Tudsdela)</strong></div><div><span>ARTE</span><strong>Pedro Henrique</strong></div><div><span>CONCEITO E DESIGN</span><strong>Leonardo Tudela, Daniel Cezar</strong></div><div><span>DESIGN EDUCACIONAL</span><strong>Ismael Prado</strong></div><p>Obrigado por ajudar a tornar a matemática mais concreta, curiosa e acolhedora.</p></section></main>`,
   );
 }
 app.addEventListener("click", (event) => {

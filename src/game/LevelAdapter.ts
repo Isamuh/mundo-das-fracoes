@@ -1,4 +1,4 @@
-import type { Level, Card, RiverPosition, BridgePosition, DinoPosition } from "../data/types";
+import type { Level, Deck, Card, RiverPosition, BridgePosition, DinoPosition } from "../data/types";
 import { resolveBridgeGeometry } from "./SceneGeometry";
 
 /**
@@ -18,13 +18,21 @@ function formatFraction(text: string): string {
  */
 export class LevelAdapter {
   /**
+   * Retorna o deck ativo do nível conforme o modo difícil
+   * No modo difícil, usa hardDeck (quando existente); senão, mantém o deck padrão
+   */
+  static getDeck(level: Level, hardMode = false): Deck {
+    return hardMode && level.hardDeck ? level.hardDeck : level.deck;
+  }
+
+  /**
    * Converte um nível JSON em um objeto de valores (cards) para renderização
    * Formato esperado: { cardId: cardDisplay, ... }
    * Cards de fração são renderizadas como HTML; operadores são retornados como string
    */
-  static getLevelValues(level: Level): Record<string, string> {
+  static getLevelValues(level: Level, hardMode = false): Record<string, string> {
     const values: Record<string, string> = {};
-    for (const card of level.deck.cards) {
+    for (const card of LevelAdapter.getDeck(level, hardMode).cards) {
       // Se for fração (contém "/"), renderizar como HTML; senão retornar como string
       if (card.type === "fraction" && card.value?.includes("/")) {
         values[card.id] = formatFraction(card.value);
@@ -138,17 +146,20 @@ export class LevelAdapter {
 
   /**
    * Retorna padrão esperado para validação
+   * No modo difícil, usa validationPatternHard (quando existente); senão, o padrão
    */
-  static getValidationPattern(level: Level) {
-    return level.validationPattern;
+  static getValidationPattern(level: Level, hardMode = false) {
+    return hardMode && level.validationPatternHard
+      ? level.validationPatternHard
+      : level.validationPattern;
   }
 
 
   /**
    * Extrai apenas os IDs de cards do deck
    */
-  static getDeckCardIds(level: Level): string[] {
-    return level.deck.cards.map((card) => card.id);
+  static getDeckCardIds(level: Level, hardMode = false): string[] {
+    return LevelAdapter.getDeck(level, hardMode).cards.map((card) => card.id);
   }
 
   /**

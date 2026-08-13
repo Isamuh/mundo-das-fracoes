@@ -46,6 +46,58 @@
       }
     ]
   },
+  "hardDeck": {
+    "cards": [
+      {
+        "id": "threeQuartersA",
+        "type": "fraction",
+        "display": "3/4",
+        "value": "3/4"
+      },
+      {
+        "id": "plus",
+        "type": "operator",
+        "display": "+",
+        "value": "+"
+      },
+      {
+        "id": "threeQuartersB",
+        "type": "fraction",
+        "display": "3/4",
+        "value": "3/4"
+      },
+      {
+        "id": "minus",
+        "type": "operator",
+        "display": "−",
+        "value": "-"
+      },
+      {
+        "id": "half",
+        "type": "fraction",
+        "display": "1/2",
+        "value": "1/2"
+      },
+      {
+        "id": "third",
+        "type": "fraction",
+        "display": "1/3",
+        "value": "1/3"
+      },
+      {
+        "id": "oneSixth",
+        "type": "fraction",
+        "display": "1/6",
+        "value": "1/6"
+      },
+      {
+        "id": "fifth",
+        "type": "fraction",
+        "display": "1/5",
+        "value": "1/5"
+      }
+    ]
+  },
   "sceneLayout": {
     "gorgeLeft": 37.5,
     "gorgeRight": 37.5,
@@ -85,6 +137,11 @@
   "validationPattern": {
     "expectedCardCount": 5,
     "requiredCards": ["halfA", "threeQuarter", "quarterA", "plusA", "minus"],
+    "structure": ["fraction", "operator", "fraction", "operator", "fraction"]
+  },
+  "validationPatternHard": {
+    "expectedCardCount": 5,
+    "requiredCards": ["threeQuartersA", "threeQuartersB", "half", "plus", "minus"],
     "structure": ["fraction", "operator", "fraction", "operator", "fraction"]
   }
 }
