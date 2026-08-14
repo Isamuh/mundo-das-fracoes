@@ -8,6 +8,8 @@ export class Fraction {
   }
   add(other: Fraction): Fraction { return new Fraction(this.numerator * other.denominator + other.numerator * this.denominator, this.denominator * other.denominator); }
   subtract(other: Fraction): Fraction { return new Fraction(this.numerator * other.denominator - other.numerator * this.denominator, this.denominator * other.denominator); }
+  multiply(other: Fraction): Fraction { return new Fraction(this.numerator * other.numerator, this.denominator * other.denominator); }
+  divide(other: Fraction): Fraction { return new Fraction(this.numerator * other.denominator, this.denominator * other.numerator); }
   equals(other: Fraction): boolean { return this.numerator === other.numerator && this.denominator === other.denominator; }
   toString(): string { return this.denominator === 1 ? String(this.numerator) : `${this.numerator}/${this.denominator}`; }
   toNumber(): number { return this.numerator / this.denominator; }

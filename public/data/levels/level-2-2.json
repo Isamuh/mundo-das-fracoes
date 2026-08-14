@@ -1,11 +1,11 @@
 {
-  "id": "level-1-1",
-  "number": 1,
-  "world": 1,
-  "title": "Duas metades",
-  "description": "Complete 1 inteiro para encontrar a Luma.",
-  "instruction": "Fase um: Duas metades. Use as cartas para construir uma ponte que complete um inteiro.",
-  "instructionHard": "Fase um: Um terço e dois terços. Use as cartas para construir uma ponte que complete um inteiro.",
+  "id": "level-2-2",
+  "number": 5,
+  "world": 2,
+  "title": "Metade da metade",
+  "description": "Multiplique frações e complete 1 inteiro.",
+  "instruction": "Fase dois: Metade da metade. Multiplique 1/2 por 1/2 e depois por 4 para completar um inteiro.",
+  "instructionHard": "Fase dois: Multiplicar e dividir frações. Faça 3/4 × 2/3 ÷ 1/2 para completar um inteiro.",
   "objective": "1/1",
   "deck": {
     "cards": [
@@ -16,10 +16,10 @@
         "value": "1/2"
       },
       {
-        "id": "plus",
+        "id": "timesA",
         "type": "operator",
-        "display": "+",
-        "value": "+"
+        "display": "×",
+        "value": "×"
       },
       {
         "id": "halfB",
@@ -28,10 +28,22 @@
         "value": "1/2"
       },
       {
-        "id": "minus",
+        "id": "timesB",
         "type": "operator",
-        "display": "−",
-        "value": "-"
+        "display": "×",
+        "value": "×"
+      },
+      {
+        "id": "four",
+        "type": "fraction",
+        "display": "4",
+        "value": "4"
+      },
+      {
+        "id": "quarter",
+        "type": "fraction",
+        "display": "1/4",
+        "value": "1/4"
       },
       {
         "id": "third",
@@ -40,38 +52,26 @@
         "value": "1/3"
       },
       {
-        "id": "quarterA",
-        "type": "fraction",
-        "display": "1/4",
-        "value": "1/4"
-      },
-      {
-        "id": "quarterB",
-        "type": "fraction",
-        "display": "1/4",
-        "value": "1/4"
-      },
-      {
-        "id": "fifth",
-        "type": "fraction",
-        "display": "1/5",
-        "value": "1/5"
+        "id": "divide",
+        "type": "operator",
+        "display": "÷",
+        "value": "÷"
       }
     ]
   },
   "hardDeck": {
     "cards": [
       {
-        "id": "thirdA",
+        "id": "threeQuarters",
         "type": "fraction",
-        "display": "1/3",
-        "value": "1/3"
+        "display": "3/4",
+        "value": "3/4"
       },
       {
-        "id": "plus",
+        "id": "times",
         "type": "operator",
-        "display": "+",
-        "value": "+"
+        "display": "×",
+        "value": "×"
       },
       {
         "id": "twoThirds",
@@ -80,10 +80,10 @@
         "value": "2/3"
       },
       {
-        "id": "minus",
+        "id": "divide",
         "type": "operator",
-        "display": "−",
-        "value": "-"
+        "display": "÷",
+        "value": "÷"
       },
       {
         "id": "half",
@@ -98,16 +98,16 @@
         "value": "1/4"
       },
       {
-        "id": "fifth",
+        "id": "third",
         "type": "fraction",
-        "display": "1/5",
-        "value": "1/5"
+        "display": "1/3",
+        "value": "1/3"
       },
       {
-        "id": "threeEighths",
+        "id": "fiveSixths",
         "type": "fraction",
-        "display": "3/8",
-        "value": "3/8"
+        "display": "5/6",
+        "value": "5/6"
       }
     ]
   },
@@ -118,7 +118,6 @@
     "cliffRightOffsetRight": -4,
     "cliffLeftOffsetTop": 155,
     "cliffRightOffsetTop": 125,
-    "riverOffsetTop": 10,
     "river": {
       "left": 37.5,
       "right": 37.5,
@@ -149,13 +148,13 @@
     "cliffRightUrl": "/assets/background/cliff_right.png"
   },
   "validationPattern": {
-    "expectedCardCount": 3,
-    "requiredCards": ["halfA", "halfB", "plus"],
-    "structure": ["fraction", "operator", "fraction"]
+    "expectedCardCount": 5,
+    "requiredCards": ["halfA", "halfB", "four", "timesA", "timesB"],
+    "structure": ["fraction", "operator", "fraction", "operator", "fraction"]
   },
   "validationPatternHard": {
-    "expectedCardCount": 3,
-    "requiredCards": ["thirdA", "plus", "twoThirds"],
-    "structure": ["fraction", "operator", "fraction"]
+    "expectedCardCount": 5,
+    "requiredCards": ["threeQuarters", "times", "twoThirds", "divide", "half"],
+    "structure": ["fraction", "operator", "fraction", "operator", "fraction"]
   }
 }

@@ -34,4 +34,17 @@ export class LevelLoader {
   static getWorld1Levels(): string[] {
     return ["level-1-1", "level-1-3", "level-1-4"];
   }
+
+  /**
+   * Lista de IDs dos níveis disponíveis no Mundo 2
+   */
+  static getWorld2Levels(): string[] {
+    return [
+      "level-2-1",
+      "level-2-2",
+      "level-2-3",
+      "level-2-4",
+      "level-2-5",
+    ];
+  }
 }

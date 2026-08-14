@@ -28,8 +28,12 @@ let settings: Settings = {
   ...JSON.parse(localStorage.getItem("mdf-settings") ?? "{}"),
 };
 let cards: string[] = [];
-let currentLevel: 1 | 2 | 3 = 1;
+let currentLevel = 1;
 let deckOrder: string[] = [];
+const phaseInWorld = (n: number) => (n <= 3 ? n : n - 3);
+const levelWorld = (n: number) => (n <= 3 ? 1 : 2);
+const levelComplete = (n: number) =>
+  localStorage.getItem(`mdf-level-${n}-complete`) === "true";
 const shuffle = <T>(items: T[]): T[] => {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -102,6 +106,9 @@ const cardFraction = (id: string) => {
     const [numerator, denominator] = value.split("/");
     return new Fraction(Number(numerator), Number(denominator));
   }
+  if (value !== undefined && /^\d+$/.test(value)) {
+    return new Fraction(Number(value), 1);
+  }
   return id === "threeQuarter"
     ? new Fraction(3, 4)
     : id.startsWith("third") ? new Fraction(1, 3)
@@ -111,7 +118,20 @@ const cardFraction = (id: string) => {
 };
 const isOperator = (id: string) =>
   activeDeck()?.cards.find((card) => card.id === id)?.type === "operator" ||
-  id.startsWith("plus") || id === "minus";
+  id.startsWith("plus") || id === "minus" ||
+  id.startsWith("times") || id.startsWith("divide");
+const placedEquation = (tokens: string[]): string => {
+  const deck = activeDeck();
+  return tokens
+    .map((id) => {
+      const card = deck?.cards.find((c) => c.id === id);
+      if (!card) return "";
+      return card.type === "operator"
+        ? `<strong>${card.display}</strong>`
+        : fraction(card.value ?? card.display ?? "1");
+    })
+    .join(" ");
+};
 type ExpressionState = {
   valid: boolean;
   complete: boolean;
@@ -128,7 +148,7 @@ const evaluateExpression = (tokens: string[]): ExpressionState => {
     };
   let expectsFraction = true;
   let result = new Fraction(0, 1);
-  let operation: "+" | "-" = "+";
+  let operation: "+" | "-" | "×" | "÷" = "+";
   for (const token of tokens) {
     if (expectsFraction) {
       if (isOperator(token))
@@ -139,7 +159,11 @@ const evaluateExpression = (tokens: string[]): ExpressionState => {
           message: "Falta uma fração antes deste operador.",
         };
       const value = cardFraction(token);
-      result = operation === "+" ? result.add(value) : result.subtract(value);
+      result =
+        operation === "+" ? result.add(value)
+        : operation === "-" ? result.subtract(value)
+        : operation === "×" ? result.multiply(value)
+        : result.divide(value);
       expectsFraction = false;
     } else {
       if (!isOperator(token))
@@ -147,9 +171,13 @@ const evaluateExpression = (tokens: string[]): ExpressionState => {
           valid: false,
           complete: false,
           result,
-          message: "Use + ou − entre cada par de frações.",
+          message: "Use +, −, × ou ÷ entre cada par de frações.",
         };
-      operation = token.startsWith("plus") ? "+" : "-";
+      operation =
+        token.startsWith("plus") ? "+"
+        : token === "minus" ? "-"
+        : token.startsWith("times") ? "×"
+        : "÷";
       expectsFraction = true;
     }
   }
@@ -165,7 +193,7 @@ const shell = (content: string) => {
   save();
 };
 const header = (back?: string) =>
-  `<header class="topbar"><button class="brand" data-go="home" aria-label="Voltar ao início"><span>✦</span> MUNDO DAS <strong>FRAÇÕES</strong></button>${back ? `<button class="back" data-go="${back}">← Voltar</button>` : `<div class="progress-pill">Mundo 1 • Fase ${currentLevel} de 3</div>`}</header>`;
+  `<header class="topbar"><button class="brand" data-go="home" aria-label="Voltar ao início"><span>✦</span> MUNDO DAS <strong>FRAÇÕES</strong></button>${back ? `<button class="back" data-go="${back}">← Voltar</button>` : `<div class="progress-pill">${levelWorld(currentLevel) === 2 ? `Mundo 2 • Fase ${phaseInWorld(currentLevel)} de 5` : `Mundo 1 • Fase ${currentLevel} de 3`}</div>`}</header>`;
 const guideCopy: Record<
   string,
   { before: string; after: string; result: string }
@@ -206,8 +234,134 @@ const guideCopyHard: Record<
     after: "A metade virou dois quartos e saiu de três quartos. Sobrou um quarto.",
     result: "1/4",
   },
-  multiply: guideCopy.multiply,
-  divide: guideCopy.divide,
+  multiply: {
+    before: "Toque para ver um terço se repetindo.",
+    after: "O terço se repetiu três vezes e formou um inteiro completo.",
+    result: "1 inteiro",
+  },
+  divide: {
+    before: "Toque para ver três quartos sendo divididos.",
+    after:
+      "Três quartos foram divididos em duas partes iguais. Cada parte vale três oitavos.",
+    result: "3/8",
+  },
+  combine: {
+    before:
+      "Toque para ver três quartos, dois terços e uma metade formando um inteiro.",
+    after:
+      "Três quartos vezes dois terços dá uma metade. Dividir por uma metade dobra: completa o inteiro.",
+    result: "1",
+  },
+};
+const worldTwoMeta: Record<
+  number,
+  { eyebrow: string; title: string; lead: string; icon: string }
+> = {
+  4: {
+    eyebrow: "MULTIPLICAR",
+    title: "Repetir uma metade",
+    lead: "Uma metade repetida duas vezes completa o inteiro. O símbolo <b>×</b> repete partes.",
+    icon: "×",
+  },
+  5: {
+    eyebrow: "METADE DA METADE",
+    title: "Metade da metade",
+    lead: "Metade de uma metade é um quarto. Repita a parte menor para completar o inteiro.",
+    icon: "½",
+  },
+  6: {
+    eyebrow: "REPARTIR O INTEIRO",
+    title: "Repartir o inteiro",
+    lead: "Um inteiro dividido em partes iguais vira frações. O símbolo <b>÷</b> reparte.",
+    icon: "÷",
+  },
+  7: {
+    eyebrow: "QUANTAS VEZES CABE",
+    title: "Quantas vezes cabe",
+    lead: "Dividir também responde: quantas vezes uma parte cabe na outra?",
+    icon: "÷",
+  },
+  8: {
+    eyebrow: "TRANSFORMAR PARTES",
+    title: "Transformar partes",
+    lead: "Combine multiplicar e dividir para transformar partes e completar a ponte.",
+    icon: "×÷",
+  },
+};
+const worldTwoDiscovery: Record<
+  number,
+  { easy: { title: string; explanation: string; equation: string }; hard: { title: string; explanation: string; equation: string } }
+> = {
+  4: {
+    easy: {
+      title: "Você repetiu uma metade!",
+      explanation:
+        "Uma metade repetida duas vezes forma um inteiro completo.",
+      equation: `${fraction("1/2")} <strong>×</strong> ${fraction("2")} <strong>=</strong> <b>1</b>`,
+    },
+    hard: {
+      title: "Você repetiu frações diferentes!",
+      explanation:
+        "Dois terços vezes três meios: os numeradores e denominadores se cancelam e completam o inteiro.",
+      equation: `${fraction("2/3")} <strong>×</strong> ${fraction("3/2")} <strong>=</strong> <b>1</b>`,
+    },
+  },
+  5: {
+    easy: {
+      title: "Metade da metade!",
+      explanation:
+        "Metade de uma metade é um quarto. Repetido quatro vezes, completa o inteiro.",
+      equation: `${fraction("1/2")} <strong>×</strong> ${fraction("1/2")} <strong>×</strong> ${fraction("4")} <strong>=</strong> <b>1</b>`,
+    },
+    hard: {
+      title: "Você multiplicou e dividiu frações!",
+      explanation:
+        "Três quartos vezes dois terços dá uma metade. Dividir por uma metade dobra: completa o inteiro.",
+      equation: `${fraction("3/4")} <strong>×</strong> ${fraction("2/3")} <strong>÷</strong> ${fraction("1/2")} <strong>=</strong> <b>1</b>`,
+    },
+  },
+  6: {
+    easy: {
+      title: "Você repartiu o inteiro!",
+      explanation:
+        "Um inteiro dividido em quatro partes iguais forma quartos. Quatro quartos completam o inteiro.",
+      equation: `${fraction("1")} <strong>÷</strong> ${fraction("4")} <strong>×</strong> ${fraction("4")} <strong>=</strong> <b>1</b>`,
+    },
+    hard: {
+      title: "Você repartiu por uma metade!",
+      explanation:
+        "Dividir um inteiro por uma metade dá duas metades. Metade disso completa o inteiro.",
+      equation: `${fraction("1")} <strong>÷</strong> ${fraction("1/2")} <strong>×</strong> ${fraction("1/2")} <strong>=</strong> <b>1</b>`,
+    },
+  },
+  7: {
+    easy: {
+      title: "Quantas vezes cabe!",
+      explanation:
+        "Em uma metade cabem dois quartos. Metade disso completa o inteiro.",
+      equation: `${fraction("1/2")} <strong>÷</strong> ${fraction("1/4")} <strong>×</strong> ${fraction("1/2")} <strong>=</strong> <b>1</b>`,
+    },
+    hard: {
+      title: "Quantas vezes cabe!",
+      explanation:
+        "Em três quartos cabem dois pedaços de três oitavos. Metade disso completa o inteiro.",
+      equation: `${fraction("3/4")} <strong>÷</strong> ${fraction("3/8")} <strong>×</strong> ${fraction("1/2")} <strong>=</strong> <b>1</b>`,
+    },
+  },
+};
+const worldTwoFinal = {
+  easy: {
+    title: "Você dominou o Mundo 2!",
+    explanation:
+      "Com multiplicar e dividir, você transformou partes e construiu pontes inteiras. O Mundo 2 está completo!",
+    equation: `${fraction("2")} <strong>×</strong> ${fraction("1/4")} <strong>×</strong> ${fraction("2")} <strong>=</strong> <b>1</b>`,
+  },
+  hard: {
+    title: "Você dominou o Mundo 2!",
+    explanation:
+      "Com frações maiores, você multiplicou e dividiu para construir pontes exatas. O Mundo 2 está completo!",
+    equation: `${fraction("5/6")} <strong>×</strong> ${fraction("3/5")} <strong>÷</strong> ${fraction("1/2")} <strong>=</strong> <b>1</b>`,
+  },
 };
 function activeGuideCopy(key: string) {
   return settings.hardMode && guideCopyHard[key] ? guideCopyHard[key] : guideCopy[key];
@@ -310,11 +464,33 @@ function operationsGuide(): void {
     `${header("home")}<main class="guide-page"><p class="eyebrow">GUIA DO MUNDO 1</p><h1>Juntar e retirar partes</h1><p class="page-lead">${lead}</p><section class="guide-grid"><article class="guide-card"><span class="guide-symbol">+</span><h2>Juntar</h2>${joinBar}<div class="guide-caption" aria-live="polite">${joinCaption}</div><p>${joinCopy}</p><div class="guide-actions"><button class="button ghost guide-toggle" data-action="guide-toggle" data-guide="join" data-label="Toque para juntar">Toque para juntar</button><button class="icon-btn" data-action="guide-speak" data-guide="join" aria-label="Ouvir explicação de juntar">🔊</button></div></article><article class="guide-card"><span class="guide-symbol minus-symbol">−</span><h2>Retirar</h2>${removeBar}<div class="guide-caption" aria-live="polite">${removeCaption}</div><p>${removeCopy}</p><div class="guide-actions"><button class="button ghost guide-toggle" data-action="guide-toggle" data-guide="remove" data-label="Toque para retirar">Toque para retirar</button><button class="icon-btn" data-action="guide-speak" data-guide="remove" aria-label="Ouvir explicação de retirar">🔊</button></div></article></section><aside class="guide-note">${note}</aside><button class="button primary" data-go="map">Ir para as fases <span>→</span></button></main>`,
   );
 }
+const mapNode = (
+  phase: number,
+  unlocked: boolean,
+  action: string,
+  title: string,
+) =>
+  unlocked
+    ? `<button class="level-node unlocked" data-action="${action}"><span>${phase}</span><strong>${title}</strong><small>Jogar</small></button>`
+    : `<div class="level-node locked"><span>${phase}</span><strong>${title}</strong><small>Complete a fase ${phase - 1}</small></div>`;
 function map(): void {
-  const phaseTwo = localStorage.getItem("mdf-level-1-complete") === "true";
-  const phaseThree = localStorage.getItem("mdf-level-2-complete") === "true";
+  const phaseTwo = levelComplete(1);
+  const phaseThree = levelComplete(2);
+  const worldTwoTitles = [
+    "Repetir uma metade",
+    "Metade da metade",
+    "Repartir o inteiro",
+    "Quantas vezes cabe",
+    "Transformar partes",
+  ];
+  const worldTwoNodes = worldTwoTitles
+    .map((title, index) => {
+      const phase = index + 1;
+      return mapNode(phase, levelComplete(phase + 2), `open-level-${phase + 3}`, title);
+    })
+    .join('<div class="path-line"></div>');
   shell(
-    `${header("home")}<main class="map-page"><div class="map-intro"><p class="eyebrow">MUNDO 1</p><h1>Partes de um inteiro</h1><p>Ajude Tico a atravessar o vale. Cada ponte precisa ter o tamanho exato.</p></div><div class="level-path"><button class="level-node unlocked" data-go="level"><span>1</span><strong>Duas metades</strong><small>Jogar</small></button><div class="path-line"></div>${phaseTwo ? '<button class="level-node unlocked" data-action="open-level-two"><span>2</span><strong>Três terços</strong><small>Jogar</small></button>' : '<div class="level-node locked"><span>2</span><strong>Três terços</strong><small>Complete a fase 1</small></div>'}<div class="path-line"></div>${phaseThree ? '<button class="level-node unlocked" data-action="open-level-three"><span>3</span><strong>Juntar e retirar</strong><small>Novo!</small></button>' : '<div class="level-node locked"><span>3</span><strong>Juntar e retirar</strong><small>Complete a fase 2</small></div>'}</div><aside class="map-tip"><span>✦</span><p><strong>Sua missão:</strong> experimente as peças. Uma ponte que alcança o outro lado revela uma descoberta.</p></aside></main>`,
+    `${header("home")}<main class="map-page"><div class="map-intro"><p class="eyebrow">MUNDO 1</p><h1>Partes de um inteiro</h1><p>Ajude Tico a atravessar o vale. Cada ponte precisa ter o tamanho exato.</p></div><div class="level-path">${mapNode(1, true, "level", "Duas metades")}<div class="path-line"></div>${phaseTwo ? mapNode(2, true, "open-level-two", "Três terços") : mapNode(2, false, "", "Três terços")}<div class="path-line"></div>${phaseThree ? mapNode(3, true, "open-level-three", "Juntar e retirar") : mapNode(3, false, "", "Juntar e retirar")}</div><aside class="map-tip"><span>✦</span><p><strong>Sua missão:</strong> experimente as peças. Uma ponte que alcança o outro lado revela uma descoberta.</p></aside><section class="world-section"><div class="world-heading"><p class="eyebrow">MUNDO 2</p><h2>Multiplicar e dividir</h2><p>Repita e reparta partes para transformar frações em pontes inteiras.</p><button class="guide-link" data-go="world-2-guide">✦ Ver guia do Mundo 2${settings.hardMode ? " · Difícil" : ""}</button></div><div class="level-path compact">${worldTwoNodes}</div></section></main>`,
   );
 }
 function level(): void {
@@ -325,50 +501,44 @@ function lessonIntro(): void {
     `${header("map")}<main class="lesson-intro"><section class="lesson-card"><div class="lesson-icon">½</div><p class="eyebrow">ANTES DE COMEÇAR</p><h1>O que é uma metade?</h1><p>Imagine uma ponte inteira dividida em <strong>duas partes iguais</strong>. Cada uma dessas partes é uma metade: <b>${fraction("1/2")}</b>.</p><div class="lesson-visual"><span class="half filled"></span><span class="half filled"></span><strong>1 inteiro</strong></div><div class="lesson-steps"><span><b>1</b> Escolha peças</span><span><b>2</b> Monte a expressão</span><span><b>3</b> Teste a ponte</span></div><button class="button primary" data-action="start-level">Entendi, vamos jogar <span>→</span></button></section></main>`,
   );
 }
-async function startLevel(): Promise<void> {
-  await loadAndPrepareLevel("level-1-1");
-  currentLevel = 1;
-  cards = [];
-  deckOrder = [];
-  renderLevel();
-  const instruction = currentLevelData ? LevelAdapter.getInstruction(currentLevelData) : "Fase um: Duas metades. Use as cartas para construir uma ponte que complete um inteiro.";
-  say(instruction);
-}
-async function startLevelTwo(): Promise<void> {
-  if (localStorage.getItem("mdf-level-1-complete") !== "true") {
+async function startLevelBy(
+  levelId: string,
+  levelNumber: number,
+  previousNumber: number | null,
+): Promise<void> {
+  if (previousNumber !== null && !levelComplete(previousNumber)) {
     map();
     return;
   }
-  await loadAndPrepareLevel("level-1-3");
-  currentLevel = 2;
+  await loadAndPrepareLevel(levelId);
+  currentLevel = levelNumber;
   cards = [];
   deckOrder = [];
   renderLevel();
   say(
-    settings.hardMode
-      ? "Fase dois: Dois quartos e uma metade. Use as cartas para completar um inteiro."
-      : "Fase dois: Três terços. Use três partes iguais para completar um inteiro.",
+    currentLevelData
+      ? LevelAdapter.getInstruction(currentLevelData, settings.hardMode)
+      : "Monte a expressão para completar um inteiro.",
   );
 }
-async function startLevelThree(): Promise<void> {
-  if (localStorage.getItem("mdf-level-2-complete") !== "true") {
-    map();
-    return;
-  }
-  await loadAndPrepareLevel("level-1-4");
-  currentLevel = 3;
-  cards = [];
-  deckOrder = [];
-  renderLevel();
-  say(
-    "Fase três: Use + e − para formar exatamente um inteiro com partes diferentes.",
-  );
+function startLevel(): void {
+  void startLevelBy("level-1-1", 1, null);
+}
+function startLevelTwo(): void {
+  void startLevelBy("level-1-3", 2, 1);
+}
+function startLevelThree(): void {
+  void startLevelBy("level-1-4", 3, 2);
+}
+function startWorldTwoPhase(phase: 1 | 2 | 3 | 4 | 5): void {
+  void startLevelBy(`level-2-${phase}`, phase + 3, phase + 2);
 }
 function renderLevel(
   message = "Arraste ou toque nas cartas para construir a expressão.",
 ): void {
   const levelTwo = currentLevel === 2;
   const levelThree = currentLevel === 3;
+  const worldTwo = currentLevelData?.world === 2;
   
   // Calcular expressão primeiro
   const expression = evaluateExpression(cards);
@@ -483,21 +653,31 @@ function renderLevel(
   const lumaAnchorStyle = `--anchor-right:${cliffRightOffsetRight}%;--anchor-width:${sceneAssets?.gorgeRight ?? 37.5}%;--anchor-top:${cliffRightOffsetTop}px`;
   const walkStyle = `--walk-end:${bridgeEnd}%`;
   
-  const phaseName = levelThree
-    ? "Juntar e retirar"
-    : levelTwo
-      ? "Três terços"
-      : "Duas metades";
-  const phaseDescription = levelThree
-    ? "Use + e − para formar exatamente 1 inteiro."
-    : levelTwo
-      ? "Use três partes iguais para completar 1 inteiro."
-      : "Complete 1 inteiro para encontrar a Luma.";
+  const phaseName =
+    currentLevelData?.title ??
+    (levelThree ? "Juntar e retirar" : levelTwo ? "Três terços" : "Duas metades");
+  const phaseDescription =
+    currentLevelData?.description ??
+    (levelThree
+      ? "Use + e − para formar exatamente 1 inteiro."
+      : levelTwo
+        ? "Use três partes iguais para completar 1 inteiro."
+        : "Complete 1 inteiro para encontrar a Luma.");
+  const phaseEyebrow = worldTwo
+    ? `MUNDO 2 • ${worldTwoMeta[currentLevel]?.eyebrow ?? "MULTIPLICAR E DIVIDIR"}`
+    : levelThree
+      ? "DUAS OPERAÇÕES"
+      : levelTwo
+        ? "PARTES EM TRÊS"
+        : "PRIMEIRA PONTE";
+  const operationGuide = worldTwo
+    ? `<aside class="operation-guide"><div><strong>× Multiplicar</strong><span>${fraction("1/2")} <b>×</b> ${fraction("2")} = <b>1</b></span><small>Repetir a mesma parte completa o inteiro.</small></div><div><strong>÷ Dividir</strong><span>${fraction("1/2")} <b>÷</b> ${fraction("2")} = ${fraction("1/4")}</span><small>Dividir cria partes menores.</small></div></aside>`
+    : `<aside class="operation-guide"><div><strong>＋ Juntar</strong><span>${fraction("1/2")} + ${fraction("1/2")} = 1</span><small>Partes iguais: junte os numeradores.</small></div><div><strong>− Retirar</strong><span>${fraction("3/4")} − ${fraction("1/4")} = ${fraction("1/2")}</span><small>Retire partes do mesmo tamanho.</small></div></aside>`;
   const shownMessage = expression.valid
     ? expression.message || message
     : expression.message;
   shell(
-    `${header("map")}<main class="level-page"><section class="level-title"><div><p class="eyebrow">FASE ${currentLevel} • ${levelThree ? "DUAS OPERAÇÕES" : levelTwo ? "PARTES EM TRÊS" : "PRIMEIRA PONTE"}</p><h1>${phaseName} <span class="star-meter">★ ☆ ☆</span></h1><p>${phaseDescription}</p></div><div class="quest-chip">✦ MISSÃO: criar uma ponte inteira</div><button class="listen" data-action="listen">🔊 Ouvir instrução</button></section><section class="world" aria-label="Vale da ponte" style="--walk-end:${bridgeEnd}%;--gorge-left:${sceneAssets?.gorgeLeft ?? 37.5}%;--gorge-right:${sceneAssets?.gorgeRight ?? 37.5}%;--cliff-left-offset-left:${cliffLeftOffsetLeft}%;--cliff-right-offset-right:${cliffRightOffsetRight}%;--cliff-left-offset-top:${cliffLeftOffsetTop}px;--cliff-right-offset-top:${cliffRightOffsetTop}px;${riverStyle}"><img class="world-bg" src="${sceneAssets?.backgroundUrl ?? "/assets/background/background.png"}" alt="Céu e vale ao fundo"/><img class="world-river" src="${riverBackground}" alt="" aria-hidden="true"/><img class="world-cliff world-cliff-left" src="${sceneAssets?.cliffLeftUrl ?? "/assets/background/cliff_left.png"}" alt="Penhasco esquerdo" aria-hidden="true"/><img class="world-cliff world-cliff-right" src="${sceneAssets?.cliffRightUrl ?? "/assets/background/cliff_right.png"}" alt="Penhasco direito" aria-hidden="true"/><div class="world-shade"></div><div class="goal-badge">OBJETIVO <strong>${fraction(targetText)}</strong></div><div class="character-anchor character-anchor-tico" style="${ticoAnchorStyle}"><div class="character-tag tag-tico">TICO</div><img class="dino tico" style="${ticoStyle}" src="/assets/dinos/dino_red_idle.png" alt="Tico"/></div><div class="character-anchor character-anchor-luma" style="${lumaAnchorStyle}"><div class="character-tag tag-luma">LUMA</div><img class="dino luma" style="${lumaStyle}" src="/assets/dinos/dino_blue_idle.png" alt="Luma"/></div><div class="bridge" style="${bridgeStyle}"><div class="bridge-fill" style="width:${fillWidth}%"></div>${cards
+    `${header("map")}<main class="level-page"><section class="level-title"><div><p class="eyebrow">FASE ${phaseInWorld(currentLevel)} • ${phaseEyebrow}</p><h1>${phaseName} <span class="star-meter">★ ☆ ☆</span></h1><p>${phaseDescription}</p><span class="mode-chip${settings.hardMode ? " hard" : ""}" aria-label="Modo de jogo ${settings.hardMode ? "difícil" : "normal"}">${settings.hardMode ? "MODO DIFÍCIL" : "MODO NORMAL"}</span></div><div class="quest-chip">✦ MISSÃO: criar uma ponte inteira</div><button class="listen" data-action="listen">🔊 Ouvir instrução</button></section><section class="world" aria-label="Vale da ponte" style="--walk-end:${bridgeEnd}%;--gorge-left:${sceneAssets?.gorgeLeft ?? 37.5}%;--gorge-right:${sceneAssets?.gorgeRight ?? 37.5}%;--cliff-left-offset-left:${cliffLeftOffsetLeft}%;--cliff-right-offset-right:${cliffRightOffsetRight}%;--cliff-left-offset-top:${cliffLeftOffsetTop}px;--cliff-right-offset-top:${cliffRightOffsetTop}px;${riverStyle}"><img class="world-bg" src="${sceneAssets?.backgroundUrl ?? "/assets/background/background.png"}" alt="Céu e vale ao fundo"/><img class="world-river" src="${riverBackground}" alt="" aria-hidden="true"/><img class="world-cliff world-cliff-left" src="${sceneAssets?.cliffLeftUrl ?? "/assets/background/cliff_left.png"}" alt="Penhasco esquerdo" aria-hidden="true"/><img class="world-cliff world-cliff-right" src="${sceneAssets?.cliffRightUrl ?? "/assets/background/cliff_right.png"}" alt="Penhasco direito" aria-hidden="true"/><div class="world-shade"></div><div class="goal-badge">OBJETIVO <strong>${fraction(targetText)}</strong></div><div class="character-anchor character-anchor-tico" style="${ticoAnchorStyle}"><div class="character-tag tag-tico">TICO</div><img class="dino tico" style="${ticoStyle}" src="/assets/dinos/dino_red_idle.png" alt="Tico"/></div><div class="character-anchor character-anchor-luma" style="${lumaAnchorStyle}"><div class="character-tag tag-luma">LUMA</div><img class="dino luma" style="${lumaStyle}" src="/assets/dinos/dino_blue_idle.png" alt="Luma"/></div><div class="bridge" style="${bridgeStyle}"><div class="bridge-fill" style="width:${fillWidth}%"></div>${cards
       .filter((x) => !isOperator(x))
       .map(
         (_, i) =>
@@ -514,7 +694,7 @@ function renderLevel(
       )
       .join(
         "",
-      )}</div></div><div class="play-actions"><button class="button reset" data-action="reset">↻ Refazer</button><button class="button primary" data-action="play">Testar ponte <span>▶</span></button></div></section><aside class="operation-guide"><div><strong>＋ Juntar</strong><span>${fraction("1/2")} + ${fraction("1/2")} = 1</span><small>Partes iguais: junte os numeradores.</small></div><div><strong>− Retirar</strong><span>${fraction("3/4")} − ${fraction("1/4")} = ${fraction("1/2")}</span><small>Retire partes do mesmo tamanho.</small></div></aside></main>`,
+      )}</div></div><div class="play-actions"><button class="button reset" data-action="reset">↻ Refazer</button><button class="button primary" data-action="play">Testar ponte <span>▶</span></button></div></section>${operationGuide}</main>`,
   );
   syncBridgeGeometry();
   startRiverAnimation();
@@ -598,15 +778,11 @@ function startRiverAnimation(): void {
   }, 550);
 }
 function assess(): void {
-  const sameCards = (a: string[], b: string[]): boolean =>
-    a.length === b.length &&
-    [...a].sort().join("|") === [...b].sort().join("|");
   const pattern = currentLevelData
     ? LevelAdapter.getValidationPattern(currentLevelData, settings.hardMode)
     : undefined;
   const correctShape = pattern
     ? cards.length === pattern.expectedCardCount &&
-      (!pattern.requiredCards || sameCards(cards, pattern.requiredCards)) &&
       (!pattern.structure || cards.every((id, index) =>
         activeDeck()?.cards.find((card) => card.id === id)?.type === pattern.structure?.[index],
       ))
@@ -627,7 +803,9 @@ function assess(): void {
         : cards.length
           ? sum.toNumber() > target.toNumber()
             ? `A ponte mede ${sum.toString()}: ela ultrapassa o outro lado. Tente formar exatamente ${target.toString()}.`
-            : "A ponte ainda não alcança o outro lado. Observe a medida e tente de novo."
+            : sum.equals(target)
+              ? "A medida é exatamente 1, mas essas não são as peças certas desta fase. Ouça a instrução e tente outra combinação."
+              : "A ponte ainda não alcança o outro lado. Observe a medida e tente de novo."
           : "Escolha as peças primeiro.";
     refreshLevelInteraction(feedback);
     say(feedback);
@@ -670,41 +848,36 @@ function animateTico(): void {
 function discovery(): void {
   const level = currentLevel;
   const hard = settings.hardMode;
-  const title =
-    level === 3
-      ? "Você dominou duas operações!"
-      : level === 2
-        ? hard
-          ? "Você juntou partes diferentes!"
-          : "Você juntou três terços!"
-        : "Você completou um inteiro!";
-  const explanation =
-    level === 3
-      ? hard
-        ? "Você juntou três quartos e mais três quartos, depois retirou uma metade. O resultado encaixou exatamente no inteiro."
-        : "Você juntou três quartos e uma metade, depois retirou um quarto. O resultado encaixou exatamente no inteiro."
-      : level === 2
-        ? hard
-          ? "Dois quartos e uma metade se juntam para formar um inteiro completo."
-          : "Três terços do mesmo tamanho se juntam para formar um inteiro completo."
-        : hard
-          ? "Um terço e dois terços se juntam para formar um inteiro completo."
-          : "Duas metades do mesmo tamanho se juntam para formar um inteiro completo.";
-  const equation =
-    level === 3
-      ? hard
-        ? `${fraction("3/4")} <strong>+</strong> ${fraction("3/4")} <strong>−</strong> ${fraction("1/2")} <strong>=</strong> <b>1</b>`
-        : `${fraction("1/2")} <strong>+</strong> ${fraction("3/4")} <strong>−</strong> ${fraction("1/4")} <strong>=</strong> <b>1</b>`
-      : level === 2
-        ? hard
-          ? `${fraction("1/4")} <strong>+</strong> ${fraction("1/4")} <strong>+</strong> ${fraction("1/2")} <strong>=</strong> <b>1</b>`
-          : `${fraction("1/3")} <strong>+</strong> ${fraction("1/3")} <strong>+</strong> ${fraction("1/3")} <strong>=</strong> <b>1</b>`
-        : hard
-          ? `${fraction("1/3")} <strong>+</strong> ${fraction("2/3")} <strong>=</strong> ${fraction("3/3")} <strong>=</strong> <b>1</b>`
-          : `${fraction("1/2")} <strong>+</strong> ${fraction("1/2")} <strong>=</strong> ${fraction("2/2")} <strong>=</strong> <b>1</b>`;
+  const worldTwo = level >= 4;
+  let title: string;
+  let explanation: string;
+  if (worldTwo) {
+    const data = level === 8 ? worldTwoFinal : worldTwoDiscovery[level];
+    const variant = hard ? data.hard : data.easy;
+    title = variant.title;
+    explanation = variant.explanation;
+  } else if (level === 3) {
+    title = "Você dominou duas operações!";
+    explanation = hard
+      ? "Você juntou três quartos e mais três quartos, depois retirou uma metade. O resultado encaixou exatamente no inteiro."
+      : "Você juntou três quartos e uma metade, depois retirou um quarto. O resultado encaixou exatamente no inteiro.";
+  } else if (level === 2) {
+    title = hard ? "Você juntou partes diferentes!" : "Você juntou três terços!";
+    explanation = hard
+      ? "Dois quartos e uma metade se juntam para formar um inteiro completo."
+      : "Três terços do mesmo tamanho se juntam para formar um inteiro completo.";
+  } else {
+    title = "Você completou um inteiro!";
+    explanation = hard
+      ? "Um terço e dois terços se juntam para formar um inteiro completo."
+      : "Duas metades do mesmo tamanho se juntam para formar um inteiro completo.";
+  }
+  const equation = `${placedEquation(cards)} <strong>=</strong> <b>1</b>`;
+  const closeLabel =
+    level === 3 ? "Ir ao Mundo 2" : level === 8 ? "Voltar ao mapa" : "Próxima fase";
   const modal = document.createElement("div");
   modal.className = "modal-wrap";
-  modal.innerHTML = `<div class="discovery"><span class="spark">✦</span><p class="eyebrow">NOVA DESCOBERTA</p><h2>${title}</h2><div class="equation">${equation}</div><p>${explanation}</p><div><button class="button ghost" data-modal="listen">🔊 Ouvir</button><button class="button primary" data-modal="close">${level === 3 ? "Ir ao Mundo 2" : "Próxima fase"} →</button></div></div>`;
+  modal.innerHTML = `<div class="discovery"><span class="spark">✦</span><p class="eyebrow">NOVA DESCOBERTA</p><h2>${title}</h2><div class="equation">${equation}</div><p>${explanation}</p><div><button class="button ghost" data-modal="listen">🔊 Ouvir</button><button class="button primary" data-modal="close">${closeLabel} →</button></div></div>`;
   document.body.append(modal);
   modal.addEventListener("click", (event) => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
@@ -714,13 +887,12 @@ function discovery(): void {
     if (button.dataset.modal === "listen") say(`${title}. ${explanation}`);
     if (button.dataset.modal === "close") {
       modal.remove();
-      if (level === 1) {
-        localStorage.setItem("mdf-level-1-complete", "true");
-        nextLevel();
-      } else if (level === 2) {
-        localStorage.setItem("mdf-level-2-complete", "true");
-        nextLevelThree();
-      } else worldTwoGuide();
+      localStorage.setItem(`mdf-level-${level}-complete`, "true");
+      if (level === 1) nextLevel();
+      else if (level === 2) nextLevelThree();
+      else if (level === 3) worldTwoGuide();
+      else if (level === 8) map();
+      else nextWorldTwoPhase();
     }
   });
   say(`${title}. ${explanation}`);
@@ -735,9 +907,45 @@ function nextLevelThree(): void {
     `${header("map")}<main class="lesson-intro"><section class="lesson-card"><div class="lesson-icon">+−</div><p class="eyebrow">FASE 3 • DESAFIO DUPLO</p><h1>Juntar e retirar</h1><p>Use as duas ferramentas para construir uma ponte que encaixe exatamente no destino.</p><div class="lesson-steps"><span><b>＋</b> Junte partes</span><span><b>−</b> Retire partes</span></div><button class="button primary" data-action="start-level-three">Começar Fase 3 <span>→</span></button></section></main>`,
   );
 }
-function worldTwoGuide(): void {
+function nextWorldTwoPhase(): void {
+  const next = currentLevel + 1;
+  const meta = worldTwoMeta[next];
+  const nextPhase = phaseInWorld(next);
   shell(
-    `${header("map")}<main class="guide-page"><p class="eyebrow">PRÓXIMO CAPÍTULO • MUNDO 2</p><h1>Transformar partes</h1><p class="page-lead">Toque nas peças abaixo para ver o que <b>×</b> e <b>÷</b> fazem com uma ponte.</p><section class="guide-grid"><article class="guide-card"><span class="guide-symbol">×</span><h2>Multiplicar</h2><div class="guide-bar" data-guide="multiply"><span class="guide-piece piece-a"></span><span class="guide-piece piece-b"></span></div><div class="guide-caption" aria-live="polite">${fraction("1/2")}<b>×</b><span>2</span><b>=</b><strong data-guide-result="multiply">?</strong></div><p>Repetir a mesma parte pode completar a unidade.</p><div class="guide-actions"><button class="button ghost guide-toggle" data-action="guide-toggle" data-guide="multiply" data-label="Toque para multiplicar">Toque para multiplicar</button><button class="icon-btn" data-action="guide-speak" data-guide="multiply" aria-label="Ouvir explicação de multiplicar">🔊</button></div></article><article class="guide-card"><span class="guide-symbol minus-symbol">÷</span><h2>Dividir</h2><div class="guide-bar" data-guide="divide"><span class="guide-piece piece-a"></span></div><div class="guide-caption" aria-live="polite">${fraction("1/2")}<b>÷</b><span>2</span><b>=</b><strong data-guide-result="divide">?</strong></div><p>Dividir uma parte cria pedaços ainda menores.</p><div class="guide-actions"><button class="button ghost guide-toggle" data-action="guide-toggle" data-guide="divide" data-label="Toque para dividir">Toque para dividir</button><button class="icon-btn" data-action="guide-speak" data-guide="divide" aria-label="Ouvir explicação de dividir">🔊</button></div></article></section><aside class="guide-note">✦ As fases do Mundo 2 serão liberadas quando as novas pontes estiverem prontas.</aside><button class="button ghost" data-go="map">Voltar ao mapa do Mundo 1</button></main>`,
+    `${header("map")}<main class="lesson-intro"><section class="lesson-card"><div class="lesson-icon">${meta.icon}</div><p class="eyebrow">FASE ${next} • MUNDO 2</p><h1>${meta.title}</h1><p>${meta.lead}</p><div class="lesson-steps"><span><b>✦</b> Fase ${currentLevel} concluída</span><span><b>${nextPhase}</b> Pronto para jogar</span></div><button class="button primary" data-action="start-level-${next}">Começar Fase ${nextPhase} <span>→</span></button></section></main>`,
+  );
+}
+function worldTwoGuide(): void {
+  const hard = settings.hardMode;
+  const lead = hard
+    ? "Peças com tamanhos diferentes pedem conversões. Veja como <b>×</b> e <b>÷</b> transformam as partes."
+    : "Toque nas peças abaixo para ver o que <b>×</b> e <b>÷</b> fazem com uma ponte.";
+  const multiplyBar = hard
+    ? `<div class="guide-bar hard" data-guide="multiply"><span class="guide-piece piece-a"></span><span class="guide-piece piece-b"></span><span class="guide-piece piece-c"></span></div>`
+    : `<div class="guide-bar" data-guide="multiply"><span class="guide-piece piece-a"></span><span class="guide-piece piece-b"></span></div>`;
+  const multiplyCaption = hard
+    ? `${fraction("1/3")}<b>×</b>${fraction("3")}<b>=</b><strong data-guide-result="multiply">?</strong>`
+    : `${fraction("1/2")}<b>×</b>${fraction("2")}<b>=</b><strong data-guide-result="multiply">?</strong>`;
+  const multiplyCopy = hard
+    ? "Repetir uma fração até completar a unidade, mesmo com denominadores diferentes."
+    : "Repetir a mesma parte pode completar a unidade.";
+  const divideBar = hard
+    ? `<div class="guide-bar hard" data-guide="divide"><span class="guide-piece filled"></span><span class="guide-piece filled"></span><span class="guide-piece filled"></span><span class="guide-piece shrink"></span><span class="guide-piece shrink"></span><span class="guide-piece shrink"></span><span class="guide-piece"></span><span class="guide-piece"></span></div>`
+    : `<div class="guide-bar" data-guide="divide"><span class="guide-piece filled"></span><span class="guide-piece shrink"></span><span class="guide-piece"></span><span class="guide-piece"></span></div>`;
+  const divideCaption = hard
+    ? `${fraction("3/4")}<b>÷</b>${fraction("2")}<b>=</b><strong data-guide-result="divide">?</strong>`
+    : `${fraction("1/2")}<b>÷</b>${fraction("2")}<b>=</b><strong data-guide-result="divide">?</strong>`;
+  const divideCopy = hard
+    ? "Dividir uma parte maior cria pedaços menores, com um denominador maior."
+    : "Dividir uma parte cria pedaços ainda menores.";
+  const combineCard = hard
+    ? `<article class="guide-card guide-card-wide"><span class="guide-symbol">×÷</span><h2>Combinar</h2><div class="guide-bar hard" data-guide="combine"><span class="guide-piece piece-a"></span><span class="guide-piece piece-b"></span><span class="guide-piece piece-c"></span></div><div class="guide-caption" aria-live="polite">${fraction("3/4")}<b>×</b>${fraction("2/3")}<b>÷</b>${fraction("1/2")}<b>=</b><strong data-guide-result="combine">?</strong></div><p>Multiplicar e dividir juntos convertem as partes. Ajuste-as até completar o inteiro.</p><div class="guide-actions"><button class="button ghost guide-toggle" data-action="guide-toggle" data-guide="combine" data-label="Toque para combinar">Toque para combinar</button><button class="icon-btn" data-action="guide-speak" data-guide="combine" aria-label="Ouvir explicação de combinar">🔊</button></div></article>`
+    : "";
+  const note = hard
+    ? "✦ No modo difícil, as cartas trazem frações maiores. Converta antes de multiplicar ou dividir."
+    : "✦ Multiplique para repetir uma parte e divida para repartir uma parte em pedaços iguais.";
+  shell(
+    `${header("map")}<main class="guide-page"><p class="eyebrow">MUNDO 2 • GUIA ${hard ? "DO MODO DIFÍCIL" : ""}</p><h1>Multiplicar e dividir</h1><p class="page-lead">${lead}</p><span class="mode-chip guide-mode-chip${hard ? " hard" : ""}">${hard ? "MODO DIFÍCIL" : "MODO NORMAL"}</span><section class="guide-grid"><article class="guide-card"><span class="guide-symbol">×</span><h2>Multiplicar</h2>${multiplyBar}<div class="guide-caption" aria-live="polite">${multiplyCaption}</div><p>${multiplyCopy}</p><div class="guide-actions"><button class="button ghost guide-toggle" data-action="guide-toggle" data-guide="multiply" data-label="Toque para multiplicar">Toque para multiplicar</button><button class="icon-btn" data-action="guide-speak" data-guide="multiply" aria-label="Ouvir explicação de multiplicar">🔊</button></div></article><article class="guide-card"><span class="guide-symbol minus-symbol">÷</span><h2>Dividir</h2>${divideBar}<div class="guide-caption" aria-live="polite">${divideCaption}</div><p>${divideCopy}</p><div class="guide-actions"><button class="button ghost guide-toggle" data-action="guide-toggle" data-guide="divide" data-label="Toque para dividir">Toque para dividir</button><button class="icon-btn" data-action="guide-speak" data-guide="divide" aria-label="Ouvir explicação de dividir">🔊</button></div></article>${combineCard}</section><aside class="guide-note">${note}</aside><button class="button primary" data-go="map">Ir para as fases <span>→</span></button></main>`,
   );
 }
 function settingsPage(accessibility = false): void {
@@ -799,6 +1007,7 @@ app.addEventListener("click", (event) => {
         map,
         level,
         "operations-guide": operationsGuide,
+        "world-2-guide": worldTwoGuide,
         accessibility: () => settingsPage(true),
         settings: () => settingsPage(false),
         about,
@@ -829,19 +1038,16 @@ app.addEventListener("click", (event) => {
   if (element.dataset.action === "play") assess();
   if (element.dataset.action === "listen")
     say(
-      currentLevel === 3
-        ? "Fase três. Use mais e menos para construir exatamente um inteiro."
-        : currentLevel === 2
-          ? settings.hardMode
-            ? "Fase dois. Use dois quartos e uma metade para construir um inteiro."
-            : "Fase dois. Use três terços e duas cartas de mais para construir um inteiro."
-          : "Fase um. Use as cartas para construir uma ponte que complete um inteiro.",
+      currentLevelData
+        ? LevelAdapter.getInstruction(currentLevelData, settings.hardMode)
+        : "Monte a expressão para completar um inteiro.",
     );
   if (element.dataset.action === "guide-toggle" && element.dataset.guide)
     toggleGuide(element.dataset.guide);
   if (element.dataset.action === "guide-speak" && element.dataset.guide)
     speakGuide(element.dataset.guide);
   if (element.dataset.action === "start-level") startLevel();
+  if (element.dataset.action === "level") level();
   if (
     element.dataset.action === "start-level-two" ||
     element.dataset.action === "open-level-two"
@@ -852,6 +1058,15 @@ app.addEventListener("click", (event) => {
     element.dataset.action === "open-level-three"
   )
     startLevelThree();
+  for (let phase = 1; phase <= 5; phase++) {
+    const n = phase + 3;
+    if (
+      element.dataset.action === `start-level-${n}` ||
+      element.dataset.action === `open-level-${n}`
+    ) {
+      startWorldTwoPhase(phase as 1 | 2 | 3 | 4 | 5);
+    }
+  }
 });
 app.addEventListener("input", (event) => {
   const input = event.target as HTMLInputElement;

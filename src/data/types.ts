@@ -128,6 +128,8 @@ export interface Level {
   description: string;
   /** Instrução exibida durante o nível */
   instruction: string;
+  /** Instrução alternativa para o modo difícil */
+  instructionHard?: string;
   /** Objetivo da fase em formato de fração (ex. "1/1") */
   objective: string;
   /** Cards disponíveis nesta fase */

@@ -5,6 +5,7 @@
   "title": "Três terços",
   "description": "Use três partes iguais para completar 1 inteiro.",
   "instruction": "Fase dois: Três terços. Use três partes iguais para completar um inteiro.",
+  "instructionHard": "Fase dois: Dois quartos e uma metade. Use as cartas para completar um inteiro.",
   "objective": "1/1",
   "deck": {
     "cards": [

@@ -125,9 +125,12 @@ export class LevelAdapter {
 
   /**
    * Retorna instruções de um nível
+   * No modo difícil, usa instructionHard (quando existente); senão, o padrão
    */
-  static getInstruction(level: Level): string {
-    return level.instruction;
+  static getInstruction(level: Level, hardMode = false): string {
+    return hardMode && level.instructionHard
+      ? level.instructionHard
+      : level.instruction;
   }
 
   /**
