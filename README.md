@@ -2,9 +2,10 @@
 
 **Um jogo educativo 2D para aprendizagem introdutória de frações, com ênfase em acessibilidade para pessoas autistas.**
 
-![Licença](https://img.shields.io/badge/licença-a%20definir-lightgrey)
-![Status](https://img.shields.io/badge/status-pré--produção%20%2F%20vertical%20slice-orange)
-![Stack](https://img.shields.io/badge/stack-TypeScript-blue)
+![Status](https://img.shields.io/badge/status-em%20desenvolvimento%20%2F%202%20mundos-orange)
+![Stack](https://img.shields.io/badge/stack-TypeScript%20%2B%20Vite-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-0.2.0-lightgrey)
+[![Deploy](https://img.shields.io/badge/deploy-vercel-black?logo=vercel)](https://mundo-das-fracoes.vercel.app)
 
 ---
 
@@ -12,7 +13,7 @@
 
 _Mundo das Frações_ é um jogo educativo baseado em navegador cuja hipótese central é que **representar frações como objetos espaciais manipuláveis, e fazer com que operações matemáticas tenham consequências visíveis no mundo do jogo, pode reduzir a distância entre a compreensão concreta e a representação simbólica de frações**. O jogador controla dois personagens, Tico e Luma, separados por abismos que só podem ser cruzados construindo pontes a partir de cartas de frações e operações. Uma ponte só é atravessável quando a expressão matemática associada a ela é correta.
 
-O projeto é desenvolvido como um artefato de pesquisa em tecnologia educacional, com atenção explícita a critérios de acessibilidade (ritmo ajustável, ausência de pressão de tempo, suporte a texto-para-fala, feedback não punitivo) e à separação entre lógica matemática e apresentação visual, de modo a permitir validação e, futuramente, avaliação experimental com estudantes.
+O projeto é desenvolvido como um artefato de pesquisa em tecnologia educacional, com atenção explícita a critérios de acessibilidade (ritmo ajustável, ausência de pressão de tempo, narração por voz, feedback não punitivo) e à separação entre lógica matemática e apresentação visual, de modo a permitir validação e, futuramente, avaliação experimental com estudantes.
 
 Esta hipótese de design é tratada como uma proposição a ser investigada, não como um fato comprovado, e deve ser avaliada empiricamente antes de qualquer generalização sobre sua eficácia pedagógica.
 
@@ -22,8 +23,8 @@ Esta hipótese de design é tratada como uma proposição a ser investigada, nã
 
 1. [Motivação e fundamentação pedagógica](#motivação-e-fundamentação-pedagógica)
 2. [Mecânica do jogo](#mecânica-do-jogo)
-3. [Capturas de tela](#capturas-de-tela)
-4. [Progressão pedagógica](#progressão-pedagógica)
+3. [Progressão pedagógica](#progressão-pedagógica)
+4. [Capturas de tela](#capturas-de-tela)
 5. [Acessibilidade](#acessibilidade)
 6. [Arquitetura técnica](#arquitetura-técnica)
 7. [Estado atual de desenvolvimento](#estado-atual-de-desenvolvimento)
@@ -48,7 +49,7 @@ _Mundo das Frações_ parte do princípio de que a matemática deve ser **uma pr
 - operações combinam, alteram ou transformam esses pedaços;
 - uma expressão correta produz uma ponte funcional e atravessável;
 - uma expressão incorreta produz feedback visual interpretável, não punitivo;
-- novas relações matemáticas (como a soma de frações com denominadores diferentes) são **descobertas pela experimentação do jogador** antes de receberem uma explicação formal.
+- novas relações matemáticas são **descobertas pela experimentação do jogador** antes de receberem uma explicação formal.
 
 Essa filosofia de design é inspirada — sem reprodução de conteúdo, arte ou identidade visual — em jogos como _DragonBox_, _Beltmatic_, _The Farmer Was Replaced_, _Human Resource Machine_ e _Poly Bridge_, nos quais conceitos abstratos se tornam ferramentas necessárias para resolver problemas do mundo, e não respostas a perguntas explícitas.
 
@@ -56,21 +57,47 @@ Essa filosofia de design é inspirada — sem reprodução de conteúdo, arte ou
 
 ## Mecânica do jogo
 
-O jogador recebe um conjunto de **cartas** (frações, operações e cartas especiais) e deve combiná-las para formar uma expressão cujo valor corresponda ao comprimento necessário de uma ponte entre dois penhascos. Ao pressionar **Testar ponte**, o personagem tenta atravessar; se a expressão for matematicamente correta, a travessia é bem-sucedida.
+O jogador recebe um conjunto de **cartas** (frações e operadores) e deve combiná-las para formar uma expressão cujo valor corresponda ao comprimento necessário de uma ponte entre dois penhascos. Ao pressionar **Testar ponte**, o personagem tenta atravessar; se a expressão for matematicamente correta, a travessia é bem-sucedida.
 
 Loop principal de uma fase:
 
 1. apresentação do objetivo (ex.: completar `1` inteiro);
 2. apresentação das cartas disponíveis (o "balastro" da fase);
-3. o jogador seleciona/arrasta cartas para montar uma expressão;
+3. o jogador seleciona cartas para montar uma expressão;
 4. a expressão determina visualmente a composição parcial da ponte;
 5. o jogador pode **Refazer** a qualquer momento, sem penalidade;
 6. o jogador pressiona **Testar ponte**;
 7. o personagem tenta a travessia;
-8. em caso de sucesso, a travessia se completa e uma explicação/descoberta pode ser exibida;
-9. o progresso é registrado e o jogador avança.
+8. em caso de sucesso, a travessia se completa e uma descoberta é exibida;
+9. o progresso é registrado localmente e o jogador avança.
 
-A eficiência da solução (número de cartas usadas em relação ao mínimo necessário) é avaliada separadamente da correção matemática, e **nunca é usada para punir o jogador** — apenas para oferecer um indicador opcional de domínio do conceito. O jogo não utiliza contagem regressiva nem qualquer forma de pressão temporal como requisito central.
+A validação compara a estrutura e o valor matemático da expressão montada com o padrão esperado da fase. O jogo não utiliza contagem regressiva nem qualquer forma de pressão temporal.
+
+---
+
+## Progressão pedagógica
+
+O conteúdo é organizado em mundos, do concreto para o abstrato. Atualmente dois mundos estão implementados:
+
+| Mundo | Conceito                        | Fases                                                     |
+| ----- | ------------------------------- | --------------------------------------------------------- |
+| 1     | Partes de um inteiro            | Duas metades · Três terços · Juntar e retirar             |
+| 2     | Multiplicar e dividir           | Repetir uma metade · Metade da metade · Repartir o inteiro · Quantas vezes cabe · Transformar partes |
+
+Cada fase possui um **modo normal** e um **modo difícil**, que varia as cartas e as combinações esperadas (ex.: no modo difícil, `2/3 × 3/2` substitui `1/2 × 2`).
+
+Mundos planejados, condicionados à validação do núcleo do jogo:
+
+| Mundo | Conceito                            | Exemplo             |
+| ----- | ----------------------------------- | ------------------- |
+| 3     | Frações equivalentes                | `1/2 = 2/4 = 3/6`   |
+| 4     | Adição com denominadores iguais     | `1/2 + 1/2 = 1`     |
+| 5     | Adição com denominadores diferentes | `1/2 + 1/3 = 5/6`   |
+| 6     | Outras operações e razão            | `+`, `−`, `×`, `÷`, `a/b = c/d` |
+
+No Mundo 5, está prevista a técnica mnemônica popularmente chamada de "borboleta" (`a/b + c/d = (ad + bc)/bd`), explicitamente apresentada ao jogador como um **recurso visual auxiliar**, e não como uma propriedade matemática fundamental — decisão de design registrada como regra obrigatória para o time de desenvolvimento (ver [Como contribuir](#como-contribuir)).
+
+Extensões futuras possíveis, condicionadas à validação do núcleo do jogo, incluem porcentagem, razão, proporção, regra de três, números mistos, comparação de frações e problemas geométricos.
 
 ---
 
@@ -104,153 +131,130 @@ Após o jogador posicionar a carta `1/2` e o operador `+`, a ponte reflete visua
 
 ---
 
-## Progressão pedagógica
-
-O conteúdo é organizado em mundos, do concreto para o abstrato:
-
-| Mundo | Conceito                            | Exemplo             |
-| ----- | ----------------------------------- | ------------------- |
-| 1     | Partes de um inteiro                | `1/2`, `1/3`, `1/4` |
-| 2     | Frações equivalentes                | `1/2 = 2/4 = 3/6`   |
-| 3     | Adição com denominadores iguais     | `1/2 + 1/2 = 1`     |
-| 4     | Adição com denominadores diferentes | `1/2 + 1/3 = 5/6`   |
-| 5     | Outras operações                    | `+`, `−`, `×`, `÷`  |
-| 6     | Razão e proporção                   | `a/b = c/d`         |
-
-No Mundo 4, é introduzida a técnica mnemônica popularmente chamada de "borboleta" (`a/b + c/d = (ad + bc)/bd`), explicitamente apresentada ao jogador como um **recurso visual auxiliar**, e não como uma propriedade matemática fundamental — decisão de design registrada como regra obrigatória para o time de desenvolvimento (ver [Regras para o agente de desenvolvimento](#como-contribuir)).
-
-Extensões futuras possíveis, condicionadas à validação do núcleo do jogo, incluem porcentagem, razão, proporção, regra de três, números mistos, comparação de frações e problemas geométricos.
-
----
-
 ## Acessibilidade
 
-A acessibilidade é tratada como parte do design central do projeto, não como um recurso adicionado posteriormente. Diretrizes atuais:
+A acessibilidade é tratada como parte do design central do projeto, não como um recurso adicionado posteriormente. Configurações persistidas no dispositivo (`localStorage`):
 
-- **Texto-para-fala (TTS):** narração de objetivos, cartas, instruções, explicações, resultados e dicas, via Web Speech API, encapsulada em um serviço substituível.
-- **Controle de estímulos:** intensidade configurável (ou desativação total) de animações, sons e movimento.
-- **Design visual:** alto contraste, fontes legíveis, textos curtos, elementos bem separados, uso de ícones acompanhados de texto, ausência de flashes e de excesso de partículas, e nenhuma informação transmitida exclusivamente por cor.
+- **Narrador por voz (TTS):** narração de objetivos, instruções, resultados e descobertas, via Web Speech API (`pt-BR`).
+- **Redução de movimento:** reduz ou desativa animações e transições decorativas.
+- **Alto contraste:** aumenta a diferença entre cores e textos.
+- **Tema escuro:** paleta escura e confortável.
+- **Sons do jogo e volume:** música e sons de interação com volume ajustável (ou desativáveis).
 - **Ritmo:** ausência de tempo limite; o jogador pode pensar, repetir, desfazer e ouvir explicações novamente sem penalidade.
 - **Feedback não agressivo:** mensagens de erro descritivas e neutras (ex.: _"A ponte ainda não alcança o outro lado"_), em vez de indicadores punitivos de erro/acerto.
+- **Design visual:** alto contraste, fontes legíveis, textos curtos, elementos bem separados, ícones acompanhados de texto e nenhuma informação transmitida exclusivamente por cor.
 
 ---
 
 ## Arquitetura técnica
 
-### Stack alvo (especificação de design)
+### Stack
 
 - **TypeScript**
-- **Phaser 3**
 - **Vite**
-- HTML5 / CSS3
-- Web Speech API (TTS)
-- `localStorage` para persistência local de progresso
+- **HTML5 / CSS3** (renderização via DOM, com animações em CSS)
+- **Web Speech API** (narração por voz)
+- **`localStorage`** para persistência local de configurações e progresso
+- **Vitest** para testes unitários
+- Phaser 3 aparece no `package.json` como dependência declarada, mas o código atual do jogo não o utiliza — a renderização é feita diretamente em HTML/CSS.
 
 ### Princípio arquitetural
 
-A lógica matemática deve ser independente da camada de renderização, seguindo o fluxo:
+A lógica matemática é independente da camada de renderização, seguindo o fluxo:
 
 ```
-Matemática → Estado do jogo → Renderização / interação → Acessibilidade / áudio
+Matemática → Dados do nível (JSON) → Estado do jogo → Renderização / interação → Acessibilidade / áudio
 ```
 
-Essa separação permite testar a corretude matemática sem executar o jogo, e é tratada como restrição de arquitetura não negociável (ver regra 2 em [Regras para o agente de desenvolvimento](#como-contribuir)).
+Essa separação permite testar a corretude matemática sem executar o jogo, e é tratada como restrição de arquitetura não negociável (ver regra 2 em [Como contribuir](#como-contribuir)).
 
 ### Sistema matemático
 
-O núcleo do jogo depende de uma estrutura `Fraction` com, no mínimo, as operações `add`, `subtract`, `multiply`, `divide`, `simplify`, `equals`, `compare`, `toNumber` e `toString`, com as seguintes garantias:
+O núcleo do jogo é a classe `Fraction` (`src/math/Fraction.ts`), com as operações `add`, `subtract`, `multiply`, `divide`, `equals`, `toNumber` e `toString`, com as seguintes garantias:
 
 - denominador nunca pode ser zero;
 - sinais são normalizados;
 - frações são simplificadas por MDC (máximo divisor comum);
 - comparações de igualdade evitam depender de aritmética de ponto flutuante, preferindo aritmética inteira.
 
-A validação de nível separa explicitamente **valor matemático** (o resultado da expressão) de **representação visual** (como a ponte é desenhada), e calcula a eficiência da solução (`cartasUsadas / cartasMínimas`) como uma métrica independente da correção.
+A avaliação de expressões é feita por `evaluateExpression` (`src/main.ts`), que valida a alternância entre frações e operadores e acumula o resultado. A validação de cada fase separa explicitamente **estrutura esperada** (padrão de cartas, definido no JSON do nível) de **valor matemático** (resultado da expressão comparado ao objetivo).
+
+### Níveis declarativos
+
+Os níveis são dados declarativos em JSON (`public/data/levels/*.json`), carregados por `LevelLoader` e adaptados pela `LevelAdapter`. Cada nível define cartas (`deck`/`hardDeck`), objetivo, layout da cena (`sceneLayout`) e padrão de validação (`validationPattern`/`validationPatternHard`). A geometria da ponte é calculada automaticamente entre as bordas internas dos penhascos por `resolveBridgeGeometry` (`src/game/SceneGeometry.ts`).
 
 ---
 
 ## Estado atual de desenvolvimento
 
-> Esta seção descreve o estado da implementação em curso, distinto da especificação de arquitetura de referência descrita acima.
+> Versão 0.2.0 — o jogo é executável e jogável no navegador. Jogue a versão publicada em <https://mundo-das-fracoes.vercel.app>.
 
-O protótipo em desenvolvimento ativo está centralizado em `main.ts` (lógica de jogo) e `style.css` (animações e tematização), cobrindo o Mundo 1 e parte do Mundo 2 do mapa de progressão. Trabalho recente concentrou-se em correções de animação e de validação de nível:
+Implementação atual, concentrada em `src/main.ts` (lógica de jogo e telas) e `src/style.css` (visual e animações), com os dados de nível em `public/data/levels/`:
 
-- **Animações de guia corrigidas:** ajuste da barra de fusão visual na operação "juntar" do Mundo 1 (conflito residual entre `gap` e a animação de `margin-right`); correção da peça de "retirar", que agora é recolorida em vez de escalada a zero, evitando o desaparecimento abrupto da peça removida; resolução de uma colisão de especificidade CSS entre o tema escuro e a classe `.active` que impedia a pintura correta da segunda peça na operação "multiplicar" do Mundo 2.
-- **Animação de corrida do personagem Tico suavizada:** o efeito de teletransporte, causado pela adição síncrona da classe `walking` no mesmo tick da criação do elemento (o que colapsava as transições CSS), foi resolvido com um padrão de **duplo `requestAnimationFrame`** para forçar reflow antes da transição.
-- **Embaralhamento de cartas:** implementado com o algoritmo de Fisher-Yates, sobre um array `deckOrder` estável por fase, reiniciado a cada início de nível.
-- **Etiqueta de nome do Tico:** passou a acompanhar o personagem durante as animações de travessia de ponte, via regra CSS `.tag-tico.walking` sincronizada com a transição do sprite (`1.8s ease-in-out`), aplicada simultaneamente à classe `walking` do personagem em `animateTico()`.
-- **Validação da Fase 2 e Fase 3 corrigida:** substituição de uma verificação posicional rígida (`correctShape`, que exigia ordem exata entre cartas como `plusA` e `plusB`) por uma comparação **baseada em conjuntos** (`sameCards`), que valida a presença das cartas corretas independentemente da ordem em que foram jogadas — necessária após a introdução do embaralhamento de cartas.
-
-### Lições técnicas registradas
-
-- Transições CSS aplicadas a elementos criados dinamicamente exigem um _reflow_ explícito entre a criação do elemento e a mudança de classe/estado; o padrão de duplo `requestAnimationFrame` é a solução mais confiável observada até o momento.
-- Especificidade CSS deve ser auditada com cuidado ao combinar regras de tema (ex.: tema escuro) com classes de estado (ex.: `.active`); regras de tema podem sobrescrever silenciosamente regras de estado.
-- A lógica de validação de jogo deve ser **independente da ordem** sempre que houver embaralhamento de cartas; comparações baseadas em conjuntos são mais robustas do que comparações posicionais.
-- Elementos visuais que acompanham um personagem (como etiquetas de nome) precisam ter suas transições e mudanças de classe sincronizadas com o elemento que rastreiam.
+- **Dois mundos completos:** Mundo 1 (3 fases) e Mundo 2 (5 fases), cada uma com modo normal e modo difícil.
+- **Carregamento declarativo de níveis:** JSONs validados pelo schema em `src/data/types.ts`, com cena configurável (penhascos, rio animado, ponte, personagens).
+- **Cartas:** seleção por toque, embaralhamento estável por fase (Fisher-Yates), construção e avaliação da expressão, botões **Refazer** e **Testar ponte**.
+- **Ponte visual:** preenchimento proporcional à soma matemática, com geometria recalculada ao redimensionar a tela (`ResizeObserver`).
+- **Personagens:** Tico (vermelho) e Luma (azul), com sprites de corrida e travessia animada da ponte.
+- **Guia de operações:** painéis interativos para `+`, `−` (Mundo 1) e `×`, `÷` (Mundo 2), com animação visual dos blocos e narração.
+- **Descobertas:** após cada travessia correta, um modal explica a relação matemática encontrada, com opção de ouvir por TTS.
+- **Progresso e configurações:** níveis concluídos (`mdf-level-{n}-complete`) e configurações (`mdf-settings`) persistidos em `localStorage`.
+- **Telas extras:** mapa de progressão, "Sobre o projeto" e "Créditos".
 
 ---
 
 ## Estrutura do repositório
 
-Estrutura de referência definida na especificação de arquitetura do projeto:
-
 ```
 mundo-das-fracoes/
-├── AGENTS.md
-├── README.md
+├── index.html
 ├── package.json
 ├── tsconfig.json
-├── vite.config.ts
-├── index.html
+├── agent.md              # (raiz) especificação de referência do projeto
+├── README.md
+├── LICENSE               # licença MIT
 │
 ├── public/
 │   ├── assets/
-│   │   ├── characters/
-│   │   ├── environment/
-│   │   ├── cards/
-│   │   ├── ui/
-│   │   ├── worlds/
-│   │   └── audio/
+│   │   ├── audio/        # música de fundo (heavenly-loop.ogg)
+│   │   ├── background/   # céu, penhascos e frames do rio
+│   │   └── dinos/        # sprites de Tico e Luma (parado/correndo)
 │   └── data/
-│       └── levels/
+│       └── levels/       # nível-1-1.json … nível-2-5.json
 │
 ├── src/
-│   ├── main.ts
-│   ├── scenes/
-│   │   ├── BootScene.ts
-│   │   ├── MenuScene.ts
-│   │   ├── LevelScene.ts
-│   │   └── ExplanationScene.ts
-│   ├── math/
-│   │   ├── Fraction.ts
-│   │   ├── FractionOperations.ts
-│   │   └── MathValidator.ts
-│   ├── game/
-│   │   ├── GameState.ts
-│   │   ├── LevelLoader.ts
-│   │   ├── Card.ts
-│   │   ├── Bridge.ts
-│   │   └── Character.ts
-│   ├── accessibility/
-│   │   ├── AccessibilitySettings.ts
-│   │   └── TTS.ts
+│   ├── main.ts           # lógica do jogo e todas as telas
+│   ├── style.css         # visual, temas e animações
 │   ├── data/
-│   │   └── types.ts
-│   └── utils/
+│   │   ├── types.ts      # schema dos níveis (Level, Card, SceneLayout…)
+│   │   └── homeScene.ts  # layout da tela inicial
+│   ├── game/
+│   │   ├── LevelLoader.ts    # carregamento dos JSONs de níveis
+│   │   ├── LevelAdapter.ts   # adapta dados do nível para a renderização
+│   │   └── SceneGeometry.ts  # geometria da ponte entre os penhascos
+│   └── math/
+│       └── Fraction.ts   # aritmética exata de frações
 │
 ├── tests/
 │   ├── math/
-│   └── levels/
+│   │   └── Fraction.test.ts
+│   └── game/
+│       └── SceneGeometry.test.ts
+│
+├── docs/
+│   ├── AGENTS.md            # especificação completa do projeto
+│   ├── LEVEL_ARCHITECTURE.md# arquitetura dos níveis JSON
+│   └── screenshots/         # capturas da interface
 │
 └── design/
-    └── design-sketch.png
+    └── design-sketch.png    # esboço visual de referência
 ```
-
-A estrutura pode evoluir por razões técnicas concretas, mas a separação entre matemática, estado de jogo e camada de acessibilidade deve ser preservada em qualquer refatoração.
 
 ---
 
 ## Instalação e execução
+
+A versão publicada está disponível em: <https://mundo-das-fracoes.vercel.app>.
 
 ```bash
 # instalar dependências
@@ -259,71 +263,37 @@ npm install
 # rodar em modo desenvolvimento
 npm run dev
 
-# rodar a suíte de testes
-npm test
-
 # gerar build de produção
 npm run build
-```
 
-> Os comandos acima refletem a especificação de projeto (Vite + TypeScript). Ajuste conforme o `package.json` efetivamente presente no repositório.
+# rodar a suíte de testes
+npm test
+```
 
 ---
 
 ## Testes
 
-O núcleo matemático deve ser testável sem executar o jogo. Casos mínimos exigidos:
+A suíte é executada com Vitest (`npm test`) e não depende de executar o jogo:
 
-```
-1/2 + 1/2 = 1
-1/2 + 1/3 = 5/6
-2/4 = 1/2
-1/3 + 1/3 = 2/3
-1/2 × 2 = 1
-1/2 ÷ 2 = 1/4
-```
-
-Casos inválidos a cobrir:
-
-```
-denominador = 0
-divisão por zero
-fração negativa
-simplificação
-sinais
-```
+- `tests/math/Fraction.test.ts` — aritmética exata: soma (`1/2 + 1/2 = 1`, `1/2 + 1/3 = 5/6`), equivalência (`2/4 = 1/2`), subtração, multiplicação, divisão e rejeição de denominador zero.
+- `tests/game/SceneGeometry.test.ts` — cálculo da ponte entre as bordas dos penhascos, incluindo ajustes finos e alturas de encaixe.
 
 ---
 
 ## Roadmap
 
-| Fase                     | Escopo                                                                                        |
-| ------------------------ | --------------------------------------------------------------------------------------------- |
-| 0 — Setup                | projeto Vite + TypeScript, lint/testes, estrutura de diretórios, referência visual            |
-| 1 — Vertical slice       | nível 1-01 completo e funcional, ponta a ponta                                                |
-| 2 — Sistema de níveis    | loader de JSON, múltiplos níveis, progresso, mapa simples                                     |
-| 3 — Conteúdo pedagógico  | equivalência, adição, denominadores diferentes, borboleta, simplificação                      |
-| 4 — Acessibilidade       | TTS, redução de movimento, contraste, tamanho de texto, sons, configurações persistentes      |
-| 5 — História e polimento | mundos adicionais, personagens, transições, narrativa, animações                              |
-| 6 — Avaliação            | métricas locais, instrumentos de avaliação, documentação, preparação para estudo com usuários |
+| Fase                     | Status                | Escopo                                                                                 |
+| ------------------------ | --------------------- | -------------------------------------------------------------------------------------- |
+| 0 — Setup                | Concluída             | projeto Vite + TypeScript, estrutura de diretórios, referência visual                  |
+| 1 — Vertical slice       | Concluída             | fase 1-01 completa e funcional, ponta a ponta                                          |
+| 2 — Sistema de níveis    | Concluída             | loader de JSON, múltiplos níveis, progresso, mapa simples                              |
+| 3 — Conteúdo pedagógico  | Parcial               | Mundo 1 (partes de um inteiro) e Mundo 2 (multiplicar e dividir) concluídos; equivalência, denominadores diferentes e borboleta planejados |
+| 4 — Acessibilidade       | Parcial               | TTS, redução de movimento, contraste, tema escuro, sons e configurações persistentes; tamanho de texto planejado |
+| 5 — História e polimento | Em andamento          | telas de apresentação, guias, descobertas, créditos; narrativa adicional planejada     |
+| 6 — Avaliação            | Futuro                | métricas locais, instrumentos de avaliação, documentação, preparação para estudo com usuários |
 
-### Critérios de aceitação do vertical slice inicial
-
-- [ ] O jogo abre no navegador.
-- [ ] O nível é carregado a partir de dados externos (JSON).
-- [ ] As cartas podem ser arrastadas/selecionadas.
-- [ ] O jogador consegue montar uma expressão.
-- [ ] A ponte reflete visualmente a quantidade matemática.
-- [ ] `1/2 + 1/2` é reconhecido como `1`.
-- [ ] O botão de teste inicia a tentativa de travessia.
-- [ ] O personagem atravessa quando a solução é correta.
-- [ ] O botão de refazer restaura o estado inicial.
-- [ ] Uma solução incorreta produz feedback compreensível e não punitivo.
-- [ ] A explicação é exibida após a descoberta de uma nova relação.
-- [ ] A explicação pode ser lida por TTS.
-- [ ] O layout funciona em desktop.
-- [ ] O código matemático possui testes automatizados.
-- [ ] Não há erros de console durante o fluxo normal de uso.
+Itens pendentes registrados no repositório (`.TODO`): suporte a pontes maiores que 1 inteiro, ponte com valores verticais e considerações sobre gravidade.
 
 ---
 
@@ -354,10 +324,10 @@ O design do projeto é informado, em nível de princípios (não de conteúdo, a
 
 ## Como contribuir
 
-O desenvolvimento é orientado por um conjunto explícito de regras (ver `AGENTS.md`), das quais se destacam:
+O desenvolvimento é orientado por um conjunto explícito de regras (ver `docs/AGENTS.md`), das quais se destacam:
 
 1. Não construir sistemas grandes antes de validar o vertical slice.
-2. Não colocar lógica matemática diretamente nas cenas/camada de renderização.
+2. Não colocar lógica matemática diretamente na camada de renderização.
 3. Não hardcodar níveis quando eles puderem ser representados como dados.
 4. Não reduzir cada conceito a uma pergunta de múltipla escolha.
 5. Priorizar visualização sobre texto.
@@ -374,13 +344,13 @@ O desenvolvimento é orientado por um conjunto explícito de regras (ver `AGENTS
 16. Preservar a referência visual original do projeto sem impedir sua evolução.
 17. Em decisões de design não especificadas, priorizar simplicidade, previsibilidade, acessibilidade e legibilidade.
 
-A especificação completa do projeto, incluindo modelo de dados de níveis, estrutura de estado de jogo e critérios pedagógicos detalhados, está documentada em [`AGENTS.md`](./AGENTS.md).
+A especificação completa do projeto, incluindo modelo de dados de níveis, estrutura de estado de jogo e critérios pedagógicos detalhados, está documentada em [`docs/AGENTS.md`](./docs/AGENTS.md). A arquitetura dos níveis JSON é detalhada em [`docs/LEVEL_ARCHITECTURE.md`](./docs/LEVEL_ARCHITECTURE.md).
 
 ---
 
 ## Licença
 
-_A definir._
+Distribuído sob a licença **MIT**. Veja o arquivo [`LICENSE`](./LICENSE) para os termos completos.
 
 ---
 

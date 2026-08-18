@@ -2,6 +2,7 @@
   "name": "mundo-das-fracoes",
   "version": "0.2.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": { "dev": "vite", "build": "tsc --noEmit && vite build", "test": "vitest run" },
   "dependencies": { "phaser": "^3.90.0" },
