@@ -4,8 +4,8 @@
   "world": 2,
   "title": "Metade da metade",
   "description": "Multiplique frações e complete 1 inteiro.",
-  "instruction": "Fase dois: Metade da metade. Multiplique 1/2 por 1/2 e depois por 4 para completar um inteiro.",
-  "instructionHard": "Fase dois: Multiplicar e dividir frações. Faça 3/4 × 2/3 ÷ 1/2 para completar um inteiro.",
+  "instruction": "Fase dois: Metade da metade. Multiplique frações e números para completar um inteiro.",
+  "instructionHard": "Fase dois: Multiplicar e dividir frações. Combine multiplicação e divisão de frações para completar um inteiro.",
   "objective": "1/1",
   "deck": {
     "cards": [

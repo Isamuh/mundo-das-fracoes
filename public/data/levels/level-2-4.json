@@ -4,8 +4,8 @@
   "world": 2,
   "title": "Quantas vezes cabe",
   "description": "Divida e multiplique para completar 1 inteiro.",
-  "instruction": "Fase quatro: Quantas vezes cabe. Divida 1/2 por 1/4 e depois multiplique por 1/2 para completar um inteiro.",
-  "instructionHard": "Fase quatro: Quantas vezes cabe. Divida 3/4 por 3/8 e depois multiplique por 1/2 para completar um inteiro.",
+  "instruction": "Fase quatro: Quantas vezes cabe. Descubra quantas vezes uma fração cabe na outra e multiplique para completar um inteiro.",
+  "instructionHard": "Fase quatro: Quantas vezes cabe. Descubra quantas vezes uma fração cabe na outra e multiplique para completar um inteiro.",
   "objective": "1/1",
   "deck": {
     "cards": [

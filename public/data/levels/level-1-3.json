@@ -4,8 +4,8 @@
   "world": 1,
   "title": "Três terços",
   "description": "Use três partes iguais para completar 1 inteiro.",
-  "instruction": "Fase dois: Três terços. Use três partes iguais para completar um inteiro.",
-  "instructionHard": "Fase dois: Dois quartos e uma metade. Use as cartas para completar um inteiro.",
+  "instruction": "Fase dois: Use três partes para completar um inteiro.",
+  "instructionHard": "Fase dois: Juntar partes diferentes. Combine cartas de tamanhos diferentes para completar um inteiro.",
   "objective": "1/1",
   "deck": {
     "cards": [
@@ -134,8 +134,20 @@
       "height": 17
     },
     "dinos": {
-      "tico": { "anchor": "leftCliff", "x": 45, "bottom": 65, "widthPercent": 17, "scale": 1 },
-      "luma": { "anchor": "rightCliff", "x": 35, "bottom": 55, "widthPercent": 17, "scale": 1 }
+      "tico": {
+        "anchor": "leftCliff",
+        "x": 45,
+        "bottom": 65,
+        "widthPercent": 17,
+        "scale": 1
+      },
+      "luma": {
+        "anchor": "rightCliff",
+        "x": 35,
+        "bottom": 55,
+        "widthPercent": 17,
+        "scale": 1
+      }
     },
     "backgroundUrl": "/assets/background/background.png",
     "riverUrls": [
@@ -149,12 +161,36 @@
   },
   "validationPattern": {
     "expectedCardCount": 5,
-    "requiredCards": ["thirdA", "thirdB", "thirdC", "plusA", "plusB"],
-    "structure": ["fraction", "operator", "fraction", "operator", "fraction"]
+    "requiredCards": [
+      "thirdA",
+      "thirdB",
+      "thirdC",
+      "plusA",
+      "plusB"
+    ],
+    "structure": [
+      "fraction",
+      "operator",
+      "fraction",
+      "operator",
+      "fraction"
+    ]
   },
   "validationPatternHard": {
     "expectedCardCount": 5,
-    "requiredCards": ["quarterA", "quarterB", "half", "plusA", "plusB"],
-    "structure": ["fraction", "operator", "fraction", "operator", "fraction"]
+    "requiredCards": [
+      "quarterA",
+      "quarterB",
+      "half",
+      "plusA",
+      "plusB"
+    ],
+    "structure": [
+      "fraction",
+      "operator",
+      "fraction",
+      "operator",
+      "fraction"
+    ]
   }
 }

@@ -5,7 +5,7 @@
   "title": "Duas metades",
   "description": "Complete 1 inteiro para encontrar a Luma.",
   "instruction": "Fase um: Duas metades. Use as cartas para construir uma ponte que complete um inteiro.",
-  "instructionHard": "Fase um: Um terço e dois terços. Use as cartas para construir uma ponte que complete um inteiro.",
+  "instructionHard": "Fase um: Juntar partes diferentes. Use as cartas para construir uma ponte somando partes de tamanhos diferentes.",
   "objective": "1/1",
   "deck": {
     "cards": [

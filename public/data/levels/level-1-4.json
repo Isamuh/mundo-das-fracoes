@@ -5,7 +5,7 @@
   "title": "Juntar e retirar",
   "description": "Use + e − para formar exatamente 1 inteiro.",
   "instruction": "Fase três: Juntar e retirar. Use mais e menos para construir exatamente um inteiro.",
-  "instructionHard": "Fase três: Juntar e retirar. Use mais e menos com três quartos para construir exatamente um inteiro.",
+  "instructionHard": "Fase três: Juntar e retirar. Use mais e menos para construir exatamente um inteiro.",
   "objective": "1/1",
   "deck": {
     "cards": [

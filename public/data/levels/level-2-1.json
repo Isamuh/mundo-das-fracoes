@@ -4,8 +4,8 @@
   "world": 2,
   "title": "Repetir uma metade",
   "description": "Multiplique por um inteiro para completar 1 inteiro.",
-  "instruction": "Fase um do Mundo 2: Repetir uma metade. Multiplique 1/2 por 2 para completar um inteiro.",
-  "instructionHard": "Fase um do Mundo 2: Repetir partes diferentes. Multiplique 2/3 por 3/2 para completar um inteiro.",
+  "instruction": "Fase um do Mundo 2: Repetir uma metade. Use a multiplicação para transformar uma fração em um inteiro.",
+  "instructionHard": "Fase um do Mundo 2: Repetir partes diferentes. Use a multiplicação para transformar uma fração em um inteiro.",
   "objective": "1/1",
   "deck": {
     "cards": [

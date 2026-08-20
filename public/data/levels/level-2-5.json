@@ -4,8 +4,8 @@
   "world": 2,
   "title": "Transformar partes",
   "description": "Combine multiplicações para completar 1 inteiro.",
-  "instruction": "Fase cinco: Transformar partes. Multiplique 2 por 1/4 e depois por 2 para completar um inteiro.",
-  "instructionHard": "Fase cinco: Transformar com frações. Multiplique 5/6 por 3/5 e divida por 1/2 para completar um inteiro.",
+  "instruction": "Fase cinco: Transformar partes. Use a multiplicação para completar um inteiro.",
+  "instructionHard": "Fase cinco: Transformar com frações. Combine multiplicação e divisão para completar um inteiro.",
   "objective": "1/1",
   "deck": {
     "cards": [

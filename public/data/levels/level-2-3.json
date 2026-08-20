@@ -4,8 +4,8 @@
   "world": 2,
   "title": "Repartir o inteiro",
   "description": "Divida e volte a multiplicar para completar 1 inteiro.",
-  "instruction": "Fase três: Repartir o inteiro. Divida 1 por 4 e depois multiplique por 4 para completar um inteiro.",
-  "instructionHard": "Fase três: Repartir por uma metade. Divida 1 por 1/2 e depois multiplique por 1/2 para completar um inteiro.",
+  "instruction": "Fase três: Repartir o inteiro. Divida e depois multiplique para completar um inteiro.",
+  "instructionHard": "Fase três: Repartir por uma metade. Divida e depois multiplique para completar um inteiro.",
   "objective": "1/1",
   "deck": {
     "cards": [
